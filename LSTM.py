@@ -1,12 +1,16 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import confusion_matrix, cohen_kappa_score
+from sklearn.utils import class_weight
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import Precision, Recall, AUC
+from tensorflow.keras import backend as K
+from tensorflow.keras.metrics import Metric
 import tensorflow as tf
 import os
-from tqdm import tqdm
 
 # Enable GPU acceleration
 print("Checking for GPU availability...")
@@ -24,10 +28,9 @@ else:
 
 # Load the training, validation, and test datasets
 print("Loading datasets...")
-training_set_path = 'training_set_bal_70.csv'
-validation_set_path = 'validation_set_bal_70.csv'
-test_set_path = 'test_set_bal_70.csv'
-updated_test_set_path = 'updated_test_set_bal_70.csv'
+training_set_path = 'training_set_full.csv'
+validation_set_path = 'validation_set_full.csv'
+test_set_path = 'test_set_full.csv'
 
 train_df = pd.read_csv(training_set_path)
 val_df = pd.read_csv(validation_set_path)
@@ -39,7 +42,7 @@ print("Datasets loaded successfully.")
 print("Preprocessing the datasets for LSTM...")
 
 # Check if the expected categorical columns are present
-required_columns = ['day_of_week', 'area_name', 'hour', 'minute', 'day', 'month', 'year', 'fix_lat', 'fix_lon', 'crime_occurrence']
+required_columns = ['day_of_week', 'hour', 'minute', 'day', 'month', 'year', 'fix_lat', 'fix_lon', 'crime_occurrence']
 missing_columns = [col for col in required_columns if col not in train_df.columns]
 if missing_columns:
     raise KeyError(f"The following required columns are missing from the dataset: {missing_columns}")
@@ -47,23 +50,23 @@ if missing_columns:
 # Concatenate train, validation, and test to perform consistent encoding and scaling
 full_df = pd.concat([train_df, val_df, test_df], ignore_index=True)
 
-# Encoding categorical variables
+# # Encoding categorical variables
 print("Encoding categorical variables...")
-categorical_columns = ['day_of_week', 'area_name']
+categorical_columns = ['day_of_week']
 encoder = LabelEncoder()
 for col in categorical_columns:
     if col in full_df.columns:
         full_df[col] = encoder.fit_transform(full_df[col])
 print("Categorical variables encoded.")
 
-# Standardizing numerical features
+# # Standardizing numerical features
 print("Standardizing numerical features...")
 numerical_columns = ['hour', 'minute', 'day', 'month', 'year', 'fix_lat', 'fix_lon']
 scaler = StandardScaler()
 full_df[numerical_columns] = scaler.fit_transform(full_df[numerical_columns])
 print("Numerical features standardized.")
 
-# Ensure all data is of numeric type
+# # Ensure all data is of numeric type
 print("Ensuring all columns are numeric...")
 full_df = full_df.apply(pd.to_numeric, errors='coerce')
 full_df.fillna(0, inplace=True)
@@ -85,9 +88,21 @@ y_val = val_df['crime_occurrence'].values
 X_test = test_df.drop(columns=['crime_occurrence']).values.reshape((test_df.shape[0], 1, test_df.shape[1] - 1))
 y_test = test_df['crime_occurrence'].values
 
+# Calculate class weights based on the distribution of classes in the training set
+print("Calculating class weights...")
+class_weights = class_weight.compute_class_weight(
+    class_weight='balanced',
+    classes=np.unique(y_train),
+    y=y_train
+)
+
+class_weight_dict = dict(enumerate(class_weights))
+print(f"Class weights: {class_weight_dict}")
+
 # 2. Building the LSTM Model
 # ---------------------------------------------------------
-model_path = 'crime_prediction_lstm_model.h5'
+
+model_path = 'crime_prediction_lstm_model_FULL_1_EPOCH.h5'
 if not os.path.exists(model_path):
     print("Building the LSTM model...")
     model = Sequential()
@@ -101,15 +116,15 @@ if not os.path.exists(model_path):
     model.add(Dropout(0.2))
     model.add(Dense(1, activation='sigmoid'))
 
-    # Compile the model
+    # Compile the model with additional metrics for imbalanced data
     optimizer = Adam(learning_rate=0.001)
-    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy', Precision(), Recall(), AUC()])
     print("LSTM model built successfully.")
 
     # 3. Training the LSTM Model
     # ---------------------------------------------------------
     print("Training the LSTM model...")
-    history = model.fit(X_train, y_train, epochs=30, batch_size=128, validation_data=(X_val, y_val), verbose=1)
+    history = model.fit(X_train, y_train, epochs=1, batch_size=128, validation_data=(X_val, y_val), class_weight=class_weight_dict, verbose=1)
     print("LSTM model training completed.")
 
     # Save the model
@@ -119,75 +134,20 @@ else:
     print(f"Model already exists at '{model_path}'. Skipping training.")
     model = tf.keras.models.load_model(model_path)
 
-# 4. Generate Negative Data for the Test Set After Training
+# 5. Evaluating the Model
 # ---------------------------------------------------------
-if os.path.exists(updated_test_set_path):
-    print(f"Updated test set already exists at '{updated_test_set_path}'. Loading it...")
-    test_df = pd.read_csv(updated_test_set_path)
-else:
-    print("Removing existing negative data from the test set...")
-    test_df = test_df[test_df['crime_occurrence'] == 1]
+print("Evaluating the model on the test set...")
 
-    print("Generating balanced negative data for the test set after training...")
-    negative_data = []
 
-    # Define the number of intervals for lat and lon
-    num_lat_intervals = 20  # Adjust based on distribution
-    num_lon_intervals = 40  # Adjust based on distribution
+# y_pred = (model.predict(X_test) > 0.5).astype("int32")
+# conf_matrix = confusion_matrix(y_test, y_pred)
+# print("Confusion Matrix:")
+# print(conf_matrix)
 
-    # Create bins for latitude and longitude
-    lat_min, lat_max = test_df['fix_lat'].min(), test_df['fix_lat'].max()
-    lon_min, lon_max = test_df['fix_lon'].min(), test_df['fix_lon'].max()
-
-    lat_bins = np.linspace(lat_min, lat_max, num_lat_intervals + 1)
-    lon_bins = np.linspace(lon_min, lon_max, num_lon_intervals + 1)
-
-    # Iterate through each unique combination of area, day, month, year, and hour in the test set
-    grouped = test_df.groupby(['area_name', 'day', 'month', 'year', 'hour'])
-    for (area, day, month, year, hour), group in tqdm(grouped, desc="Generating negative data for test set"):
-        # Generate negative cases for all lat/lon pairs not covered by crimes
-        all_possible_lat = np.arange(num_lat_intervals)
-        all_possible_lon = np.arange(num_lon_intervals)
-
-        # Remove existing lat/lon pairs to avoid exact overlap
-        existing_lat_lon_pairs = set(zip(group['fix_lat'], group['fix_lon']))
-        possible_lat_lon_pairs = np.array([(lat, lon) for lat in all_possible_lat for lon in all_possible_lon
-                                           if (lat, lon) not in existing_lat_lon_pairs])
-
-        # Use all available lat/lon pairs for negative examples
-        selected_pairs = possible_lat_lon_pairs
-
-        negative_data.extend([
-            {
-                'hour': hour,
-                'minute': np.random.choice(range(60)),
-                'day_of_week': group['day_of_week'].iloc[0],
-                'day': day,
-                'month': month,
-                'year': year,
-                'area_name': area,
-                'fix_lat': fix_lat,
-                'fix_lon': fix_lon,
-                'crime_occurrence': 0  # Indicate no crime occurrence
-            }
-            for fix_lat, fix_lon in selected_pairs
-        ])
-
-    # Convert negative examples to DataFrame and concatenate with test_df
-    negative_df = pd.DataFrame(negative_data)
-    test_df = pd.concat([test_df, negative_df], ignore_index=True)
-    print(f"Negative examples added to the test set. Test set now has {test_df.shape[0]} records.")
-
-    # Save the updated test dataset
-    print("Saving the updated test set...")
-    test_df.to_csv(updated_test_set_path, index=False)
-    print(f"Updated test set saved to '{updated_test_set_path}'.")
-
-# 5. Evaluating the Model Again After Adding Negative Data
-# ---------------------------------------------------------
-print("Evaluating the model on the updated test set...")
-X_test = test_df.drop(columns=['crime_occurrence']).values.reshape((test_df.shape[0], 1, test_df.shape[1] - 1))
-y_test = test_df['crime_occurrence'].values
-
-loss, accuracy = model.evaluate(X_test, y_test, verbose=1)
-print(f"Updated Test Accuracy: {accuracy * 100:.2f}%")
+results = model.evaluate(X_test, y_test, verbose=1)
+loss, accuracy, precision, recall = results[0], results[1], results[2], results[3]
+print(f"Test Accuracy: {accuracy * 100:.2f}%")
+print(f"Test Precision: {precision:.2f}")
+print(f"Test Recall: {recall:.2f}")
+# kappa = cohen_kappa_score(y_test, y_pred)
+# print(f"Cohen's Kappa: {kappa:.2f}")
