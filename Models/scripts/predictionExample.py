@@ -87,7 +87,7 @@ print("Shape of X_spatial:", X_spatial.shape)    # (961, 1, 2)
 
 
 # Specifica la funzione personalizzata per il caricamento
-model = load_model('../crime_prediction_lstm_model_Divided_30_EPOCH.h5')
+model = load_model('Models\crime_prediction_lstm_model_Divided_30_EPOCH.h5')
 
 model.summary()
 

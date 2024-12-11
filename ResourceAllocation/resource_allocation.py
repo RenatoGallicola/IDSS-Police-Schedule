@@ -1,6 +1,6 @@
 from ortools.linear_solver import pywraplp
 
-def allocate_policemen(loc_dist, loc_req, mins_threshold):
+def allocate_policemen(loc_dist, loc_req, mins_threshold, margin):
     """
     loc_dist: matrix where loc_dist[i][j] is the distance between policeman i and location j
     loc_req: list where loc_req[i] is the number of policemen needed at location i
@@ -37,8 +37,12 @@ def allocate_policemen(loc_dist, loc_req, mins_threshold):
 
     # Each location receives the required number of policemen
     for j in range(num_locations):
-        solver.Add(solver.Sum([x[i][j] for i in range(num_policemen)]) >= loc_req[j])
-
+        if (loc_req[j] > 0):
+            solver.Add(solver.Sum([x[i][j] for i in range(num_policemen)]) >= loc_req[j])
+            solver.Add(solver.Sum([x[i][j] for i in range(num_policemen)]) <= loc_req[j] + margin)
+        else:
+            solver.Add(solver.Sum([x[i][j] for i in range(num_policemen)]) == 0)
+          
     # Compute the number of late policemen
     late_policemen = []
     for i in range(num_policemen):
@@ -48,7 +52,7 @@ def allocate_policemen(loc_dist, loc_req, mins_threshold):
         solver.Add(late_policemen[i] >= solver.Sum([x[i][j] * (loc_dist[i][j] > dist_threshold) for j in range(num_locations)]))
 
     # Combine late policemen and distance 
-    solver.Minimize(solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
+    solver.Minimize(10000*solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:
