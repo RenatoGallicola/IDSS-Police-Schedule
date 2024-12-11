@@ -1,0 +1,12 @@
+flask
+flask-restful
+sqlalchemy
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+requests
+pytest
+gunicorn
+psycopg2-binary
