@@ -14,7 +14,7 @@ class PredictionClass:
     def __init__(self):
         self.encoder = LabelEncoder()
         self.scaler = StandardScaler()
-        self.model = load_model('../crime_prediction_lstm_model_Divided_30_EPOCH.h5')
+        self.model = load_model('Models\crime_prediction_lstm_model_Divided_30_EPOCH.h5')
 
 
     
@@ -80,10 +80,12 @@ class PredictionClass:
         # Set values to 0 where mapLosAngeles has 0
         pred_matrix[mapLosAngeles == 0] = 0
         
-        return pd.DataFrame(pred_matrix, index=lon_scaled, columns=lat_scaled)
-
+        # return pd.DataFrame(pred_matrix, index=lon_scaled, columns=lat_scaled)
+        
+        return pred_matrix
 
     def plot_heatmap(self, df):
+        df = pd.DataFrame(df, index=lon_scaled, columns=lat_scaled)
         lat_values = df.index.values
         lon_values = df.columns.values
 
