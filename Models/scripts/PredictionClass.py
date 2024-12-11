@@ -4,9 +4,11 @@ from sklearn.linear_model import LinearRegression
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
-from utils import mapLosAngeles, lat, lon, lat_scaled, lon_scaled, lon_min, lon_max, lat_min, lat_max, class_weights, \
-    add_cyclic_features, columns_periods, spatial_columns, temporal_columns
+import tensorflow as tf
+from utils import mapLosAngeles, lat_scaled, lon_scaled, add_cyclic_features, columns_periods, spatial_columns, \
+    temporal_columns, weighted_binary_crossentropy
+
+model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
 
 
 class PredictionClass:
@@ -14,19 +16,18 @@ class PredictionClass:
     def __init__(self):
         self.encoder = LabelEncoder()
         self.scaler = StandardScaler()
-        self.model = load_model('Models\crime_prediction_lstm_model_Divided_30_EPOCH.h5')
+        self.model = tf.keras.models.load_model(model_path,
+                                                custom_objects={
+                                                    'weighted_binary_crossentropy': weighted_binary_crossentropy})
 
-
-    
-
-    def generate_records(self, hour, day, month, year):
+    def generate_records(self, shift, day, month, year):
         records = []
-        day_of_week = datetime(year, month, day, hour).strftime('%A')
+        day_of_week = datetime(year, month, day).strftime('%A')
 
         for longitude in lon_scaled:
             for latitude  in lat_scaled:
                 record = {
-                    'hour': hour,
+                    'shift': shift,
                     'day': day,
                     'month': month,
                     'year': year,
@@ -49,13 +50,13 @@ class PredictionClass:
 
         df = add_cyclic_features(df, columns_periods)
 
-                # Ensure all data is of numeric type
+        # Ensure all data is of numeric type
         df = df.apply(pd.to_numeric, errors='coerce')
         df.fillna(0, inplace=True)
         df = df.astype(float)
 
         return df
-    
+
     def splitting_data(self, df):
         # Input temporale (14 feature)
         X_temporal = df[temporal_columns].values.reshape((len(df), 1, len(temporal_columns)))
@@ -65,23 +66,21 @@ class PredictionClass:
 
         return X_temporal, X_spatial
 
-
-    def predict(self,hour, day, month, year):
-        df = self.generate_records(hour, day, month, year)
+    def predict(self, shift, day, month, year):
+        df = self.generate_records(shift, day, month, year)
         df = self.normalize_records(df)
         X_temporal, X_spatial = self.splitting_data(df)
         # Esegui le predizioni
         predictions = self.model.predict([X_temporal, X_spatial])
-
 
         # Initialize prediction matrix and fill it with predictions
         pred_matrix = predictions.reshape((len(lon_scaled), len(lat_scaled)))
 
         # Set values to 0 where mapLosAngeles has 0
         pred_matrix[mapLosAngeles == 0] = 0
-        
+
         # return pd.DataFrame(pred_matrix, index=lon_scaled, columns=lat_scaled)
-        
+
         return pred_matrix
 
     def plot_heatmap(self, df):
@@ -98,5 +97,3 @@ class PredictionClass:
         plt.ylabel('Latitude')
         plt.title(f'Predicted Crime Occurrence Percentages')
         plt.show()
-
-        

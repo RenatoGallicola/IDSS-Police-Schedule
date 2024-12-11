@@ -7,28 +7,27 @@ from tensorflow.keras.losses import binary_crossentropy
 from tensorflow.keras.models import load_model
 import tensorflow as tf
 from tensorflow.keras import backend as K
-from utils import mapLosAngeles, lat, lon, lat_scaled, lon_scaled, lon_min, lon_max, lat_min, lat_max, class_weights, \
-    add_cyclic_features, columns_periods
+from utils import mapLosAngeles, lat, lon, lat_scaled, lon_scaled, add_cyclic_features, columns_periods, spatial_columns, \
+    temporal_columns, weighted_binary_crossentropy
 
 
 # Define input values
 
 # Function to generate dataset
-def generate_records(hour, minute, day, month, year):
+def generate_records(shift, day, month, year):
     records = []
-    day_of_week = datetime(year, month, day, hour, minute).strftime('%A')
+    day_of_week = datetime(year, month, day).strftime('%A')
 
     for longitude in lon_scaled:
         for latitude  in lat_scaled:
             record = {
-                'hour': hour,
+                'shift': shift,
                 'day': day,
                 'month': month,
                 'year': year,
                 'day_of_week': day_of_week,
                 'fix_lat': latitude,
                 'fix_lon': longitude,
-                # 'minute': minute,
                 'crime_occurrence': 1  # Assuming all are positive cases initially
             }
             records.append(record)
@@ -39,30 +38,19 @@ def generate_records(hour, minute, day, month, year):
 
 
 # Example usage
-hour = 15
-minute = 0
+shift = 1
 day = 2
-month = 5
-year = 2023
-dataset = generate_records(hour, minute, day, month, year)
+month = 10
+year = 2024
+dataset = generate_records(shift, day, month, year)
 
 # Encode and standardize features to match the model's training process
 encoder = LabelEncoder()
 dataset['day_of_week'] = encoder.fit_transform(dataset['day_of_week'])
 
 scaler = StandardScaler()
-# numerical_columns = ['hour', 'minute', 'day', 'month', 'year', 'fix_lat', 'fix_lon', 'day_of_week']
-# dataset[numerical_columns] = scaler.fit_transform(dataset[numerical_columns])
-
 numerical_columns = ['year', 'fix_lat', 'fix_lon']
 dataset[numerical_columns] = scaler.fit_transform(dataset[numerical_columns])
-
-columns_periods = {
-    'hour': 24,  # 24 ore in un giorno
-    'day': 31,  # 31 giorni in un mese (massimo possibile)
-    'month': 12,  # 12 mesi in un anno
-    'day_of_week': 7  # 7 giorni in una settimana
-}
 
 dataset = add_cyclic_features(dataset, columns_periods)
 
@@ -72,10 +60,6 @@ dataset.fillna(0, inplace=True)
 dataset = dataset.astype(float)
 # Identifica le colonne temporali e spaziali
 # Separa le variabili temporali
-spatial_columns = ['fix_lat', 'fix_lon']
-temporal_columns = ['hour', 'day', 'month', 'year', 'day_of_week',
-                    'hour_sin', 'hour_cos', 'day_sin', 'day_cos',
-                    'month_sin', 'month_cos', 'day_of_week_sin', 'day_of_week_cos']
 # Input temporale (14 feature)
 X_temporal = dataset[temporal_columns].values.reshape((len(dataset), 1, len(temporal_columns)))
 
@@ -87,8 +71,10 @@ print("Shape of X_spatial:", X_spatial.shape)    # (961, 1, 2)
 
 
 # Specifica la funzione personalizzata per il caricamento
-model = load_model('Models\crime_prediction_lstm_model_Divided_30_EPOCH.h5')
+model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
 
+model = tf.keras.models.load_model(model_path,
+                                   custom_objects={'weighted_binary_crossentropy': weighted_binary_crossentropy})
 model.summary()
 
 
@@ -119,7 +105,7 @@ c = plt.pcolormesh(lon_grid, lat_grid, predicted_matrix_with_lat_lon.values, sha
 plt.colorbar(c, label='Predicted Crime Occurrence Percentage')
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
-plt.title(f'Predicted Crime Occurrence Percentages for {hour} : {day}/{month}/{year}')
+plt.title(f'Predicted Crime Occurrence Percentages for {shift} : {day}/{month}/{year}')
 plt.show()
 
 # Saving dataset to CSV for further use
@@ -130,7 +116,7 @@ validation_set_path = '../../datasets/validation_set_full.csv'
 validation_df = pd.read_csv(validation_set_path)
 
 # Filter validation set for the specific date
-validation_filtered = validation_df[(validation_df['hour'] == hour) &
+validation_filtered = validation_df[(validation_df['shift'] == shift) &
                                     (validation_df['day'] == day) &
                                     (validation_df['month'] == month) &
                                     (validation_df['year'] == year)]
@@ -168,7 +154,7 @@ plt.pcolormesh(lon_grid, lat_grid, validation_matrix_with_lat_lon.values, shadin
 plt.colorbar(label='Actual Crime Occurrence Percentage (Validation)')
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
-plt.title(f'Los Angeles Map with Validation Matrix Overlay for {hour} : {day}/{month}/{year}')
+plt.title(f'Los Angeles Map with Validation Matrix Overlay for {shift} : {day}/{month}/{year}')
 plt.show()
 
 #

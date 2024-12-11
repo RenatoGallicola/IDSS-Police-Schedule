@@ -1,5 +1,8 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.losses import binary_crossentropy
+from tensorflow.keras import backend as K
+import tensorflow as tf
 
 mapLosAngeles = np.array([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
@@ -79,7 +82,7 @@ def add_cyclic_features(df, columns_periods):
     Args:
         df (pd.DataFrame): Il dataframe che contiene le variabili temporali.
         columns_periods (dict): Dizionario con colonne e periodicità.
-                                Esempio: {'hour': 24, 'day_of_week': 7, 'month': 12}
+                                Esempio: {'shift': 3, 'day_of_week': 7, 'month': 12}
 
     Returns:
         pd.DataFrame: DataFrame originale con colonne aggiuntive (sin e cos per ogni variabile ciclica).
@@ -92,13 +95,26 @@ def add_cyclic_features(df, columns_periods):
 
 
 columns_periods = {
-    'hour': 24,  # 24 ore in un giorno
+    'shift': 3,  # 24 ore in un giorno
     'day': 31,  # 31 giorni in un mese (massimo possibile)
     'month': 12,  # 12 mesi in un anno
     'day_of_week': 7  # 7 giorni in una settimana
 }
 
 spatial_columns = ['fix_lat', 'fix_lon']
-temporal_columns = ['hour', 'day', 'month', 'year', 'day_of_week',
-                    'hour_sin', 'hour_cos', 'day_sin', 'day_cos',
+temporal_columns = ['shift', 'day', 'month', 'year', 'day_of_week',
+                    'shift_sin', 'shift_cos', 'day_sin', 'day_cos',
                     'month_sin', 'month_cos', 'day_of_week_sin', 'day_of_week_cos']
+
+class_weight_dict= {0: 0.7788253176824149, 1: 1.3966187219940793}
+
+
+def weighted_binary_crossentropy(y_true, y_pred):
+    """
+    Weighted binary crossentropy loss function for Keras.
+    """
+    class_weights = tf.constant([class_weight_dict[0], class_weight_dict[1]])
+    weights = tf.gather(class_weights, tf.cast(y_true, tf.int32))
+    bce = binary_crossentropy(y_true, y_pred)
+    weighted_bce = weights * bce
+    return K.mean(weighted_bce)

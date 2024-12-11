@@ -1,15 +1,18 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils import class_weight
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.layers import Input, Attention, Concatenate, Flatten
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Precision, Recall, AUC
+from tensorflow.keras.losses import binary_crossentropy
+from tensorflow.keras import backend as K
+from utils import weighted_binary_crossentropy, class_weight_dict
+
 import tensorflow as tf
 import os
 from tensorflow.python.keras.callbacks import EarlyStopping, LearningRateScheduler
-from utils import add_cyclic_features, columns_periods
+from utils import add_cyclic_features, columns_periods, spatial_columns, temporal_columns
 
 # Enable GPU acceleration
 print("Checking for GPU availability...")
@@ -41,7 +44,7 @@ print("Datasets loaded successfully.")
 print("Preprocessing the datasets for LSTM...")
 
 # Check if the expected categorical columns are present
-required_columns = ['day_of_week', 'hour', 'day', 'month', 'year', 'fix_lat', 'fix_lon', 'crime_occurrence']
+required_columns = [ 'shift', 'day', 'month', 'year','day_of_week', 'fix_lat', 'fix_lon', 'crime_occurrence']
 missing_columns = [col for col in required_columns if col not in train_df.columns]
 if missing_columns:
     raise KeyError(f"The following required columns are missing from the dataset: {missing_columns}")
@@ -78,10 +81,6 @@ test_df = full_df.iloc[len(train_df) + len(val_df):]
 # Splitting datasets into features and target
 
 # Separa le variabili temporali
-spatial_columns = ['fix_lat', 'fix_lon']
-temporal_columns = ['hour', 'day', 'month', 'year', 'day_of_week',
-                    'hour_sin', 'hour_cos', 'day_sin', 'day_cos',
-                    'month_sin', 'month_cos', 'day_of_week_sin', 'day_of_week_cos']
 
 # Prepara i dati
 X_train_temporal = train_df[temporal_columns].values.reshape((train_df.shape[0], 1, len(temporal_columns)))
@@ -99,22 +98,10 @@ y_val = val_df['crime_occurrence'].values
 
 y_test = test_df['crime_occurrence'].values
 
-# Calculate class weights based on the distribution of classes in the training set
-print("Calculating class weights...")
-class_weights = class_weight.compute_class_weight(
-    class_weight='balanced',
-    classes=np.unique(y_train),
-    y=y_train
-)
-
-class_weight_dict = dict(enumerate(class_weights))
-print(f"Class weights: {class_weight_dict}")
-
-
 # 2. Building the LSTM Model
 # ---------------------------------------------------------
 
-model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH.h5'
+model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
 if not os.path.exists(model_path):
     print("Building the LSTM model...")
 
@@ -142,15 +129,11 @@ if not os.path.exists(model_path):
 
     # Compila il modello
     optimizer = Adam(learning_rate=1e-5)
-    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy', Precision(), Recall(), AUC()])
+    model.compile(optimizer=optimizer, loss=weighted_binary_crossentropy, metrics=['accuracy', Precision(), Recall()])
 
     # Callback
-    early_stopping = EarlyStopping(monitor='val_recall', patience=5, restore_best_weights=True)
-
-    def scheduler(epoch, lr):
-        return lr if epoch < 10 else lr * tf.math.exp(-0.1)
-
-    lr_scheduler = LearningRateScheduler(scheduler)
+    early_stopping = EarlyStopping(monitor='val_precision', patience=5, restore_best_weights=True)
+    early_stopping_recall = EarlyStopping(monitor='val_recall', patience=5, restore_best_weights=True)
 
     # Addestramento
     history = model.fit(
@@ -158,7 +141,7 @@ if not os.path.exists(model_path):
         validation_data=([X_val_temporal, X_val_spatial], y_val),
         epochs=30,
         batch_size=128,
-        callbacks=[early_stopping],
+        callbacks=[early_stopping, early_stopping_recall],
         class_weight=class_weight_dict,
         verbose=1
     )
@@ -169,16 +152,12 @@ if not os.path.exists(model_path):
     print(f"Model saved to '{model_path}'.")
 else:
     print(f"Model already exists at '{model_path}'. Skipping training.")
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path, 
+                                       custom_objects={'weighted_binary_crossentropy': weighted_binary_crossentropy})
 
 # 5. Evaluating the Model
 # ---------------------------------------------------------
 print("Evaluating the model on the test set...")
-
-# y_pred = (model.predict(X_test) > 0.5).astype("int32")
-# conf_matrix = confusion_matrix(y_test, y_pred)
-# print("Confusion Matrix:")
-# print(conf_matrix)
 
 results = model.evaluate([X_test_temporal, X_test_spatial], y_test, verbose=1)
 
@@ -187,5 +166,3 @@ loss, accuracy, precision, recall = results[0], results[1], results[2], results[
 print(f"Test Accuracy: {accuracy * 100:.2f}%")
 print(f"Test Precision: {precision:.2f}")
 print(f"Test Recall: {recall:.2f}")
-# kappa = cohen_kappa_score(y_test, y_pred)
-# print(f"Cohen's Kappa: {kappa:.2f}")

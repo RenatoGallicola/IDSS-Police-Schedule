@@ -58,6 +58,17 @@ else:
 
     # Create temporal columns and remove 'date_occ'
     df['hour'] = df['time_occ'].apply(lambda x: int(str(x).zfill(4)[:2]))  # Extract hour from time_occ
+    # Create 'shift' column based on 'hour'
+    def determine_shift(hour):
+        if 0 <= hour < 8:
+            return 1
+        elif 8 <= hour < 16:
+            return 2
+        else:
+            return 3
+
+    df['shift'] = df['hour'].apply(determine_shift)
+    print("'shift' column created based on 'hour'.")
     df['day_of_week'] = df['date_occ'].dt.day_name()  # Day of the week (e.g., Monday)
     df['day'] = df['date_occ'].dt.day  # Day of the month
     df['month'] = df['date_occ'].dt.month  # Month of the year
@@ -79,7 +90,7 @@ else:
     df['fix_lat'] = df['lat'].apply(lambda x: lat_array[np.argmin(np.abs(lat_array - x))])
     df['fix_lon'] = df['lon'].apply(lambda x: lon_array[np.argmin(np.abs(lon_array - x))])
     print("Spatial features processed into discrete ranges: 'fix_lat' and 'fix_lon'.")
-    df.drop(columns=['lat', 'lon'], inplace=True)
+    df.drop(columns=['lat', 'lon', 'hour'], inplace=True)
     print("Dropped original latitude and longitude columns.")
 
     # 2. Generation of Negative Data with Balanced Smoothing (Optimized Version)
@@ -87,16 +98,16 @@ else:
     
 
      # Reorder columns
-    df = df[['hour', 'day', 'month', 'year', 'day_of_week', 'fix_lat', 'fix_lon', 'crime_occurrence']]
+    df = df[['shift', 'day', 'month', 'year', 'day_of_week', 'fix_lat', 'fix_lon', 'crime_occurrence']]
     print("Columns reordered.")
 
     print("Generating balanced negative data (optimized version)...")
     negative_data = []
 
     # Iterate through each unique combination of area, day, month, year, and hour
-    grouped = df.groupby(['hour', 'day', 'month', 'year'])
+    grouped = df.groupby(['shift', 'day', 'month', 'year'])
     all_lat_lon_pairs = set((lat_i, lon_i) for lat_i in lat for lon_i in lon)
-    for (hour, day, month, year), group in tqdm(grouped, desc="Generating negative data"):
+    for (shift, day, month, year), group in tqdm(grouped, desc="Generating negative data"):
         
         existing_lat_lon_pairs = set(zip(group['fix_lat'], group['fix_lon']))
         possible_lat_lon_pairs = all_lat_lon_pairs - existing_lat_lon_pairs
@@ -109,7 +120,7 @@ else:
             if mapLosAngeles[lat_index, lon_index] == 1:
                 # Check if the location is valid in mapLosAngeles
                 negative_data.append({
-                    'hour': hour,
+                    'shift': shift,
                     'day': day,
                     'month': month,
                     'year': year,
@@ -137,7 +148,7 @@ else:
     # 3. Keep Only Required Columns
     # ---------------------------------------------------------
     print("Filtering final columns...")
-    columns_to_keep = ['hour', 'day', 'month', 'year', 'day_of_week', 'fix_lat', 'fix_lon', 'crime_occurrence']
+    columns_to_keep = ['shift', 'day', 'month', 'year', 'day_of_week', 'fix_lat', 'fix_lon', 'crime_occurrence']
     df = df[columns_to_keep]
     print("Final columns selected.")
 
@@ -193,8 +204,8 @@ print(f"Test set: {test_set['year'].min()} - {test_set['year'].max()} ({len(test
 print(f"Validation set: {validation_set['year'].min()} - {validation_set['year'].max()} ({len(validation_set)} records)")
 
 # Salva i dataset suddivisi
-training_set.to_csv('training_set_full.csv', index=False)
-validation_set.to_csv('validation_set_full.csv', index=False)
-test_set.to_csv('test_set_full.csv', index=False)
+training_set.to_csv('../../datasets/training_set_full.csv', index=False)
+validation_set.to_csv('../../datasets/validation_set_full.csv', index=False)
+test_set.to_csv('../../datasets/test_set_full.csv', index=False)
 
 print("Datasets saved: training_set_full.csv, validation_set_full.csv, test_set_full.csv")
