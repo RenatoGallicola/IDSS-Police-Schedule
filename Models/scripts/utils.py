@@ -97,3 +97,8 @@ columns_periods = {
     'month': 12,  # 12 mesi in un anno
     'day_of_week': 7  # 7 giorni in una settimana
 }
+
+spatial_columns = ['fix_lat', 'fix_lon']
+temporal_columns = ['hour', 'day', 'month', 'year', 'day_of_week',
+                    'hour_sin', 'hour_cos', 'day_sin', 'day_cos',
+                    'month_sin', 'month_cos', 'day_of_week_sin', 'day_of_week_cos']

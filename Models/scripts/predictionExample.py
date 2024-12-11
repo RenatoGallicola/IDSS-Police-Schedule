@@ -39,11 +39,11 @@ def generate_records(hour, minute, day, month, year):
 
 
 # Example usage
-hour = 21
+hour = 15
 minute = 0
 day = 2
-month = 9
-year = 2024
+month = 5
+year = 2023
 dataset = generate_records(hour, minute, day, month, year)
 
 # Encode and standardize features to match the model's training process
@@ -104,7 +104,7 @@ pred_matrix[mapLosAngeles == 0] = 0
 
 # Save the predicted percentages matrix with lat and lon as rows and columns
 predicted_matrix_with_lat_lon = pd.DataFrame(pred_matrix, index=lon_scaled, columns=lat_scaled)
-predicted_matrix_with_lat_lon.to_csv('predicted_crime_percentages_matrix.csv')
+# predicted_matrix_with_lat_lon.to_csv('predicted_crime_percentages_matrix.csv')
 
 # Show the predicted percentages matrix
 print(pred_matrix)
@@ -123,7 +123,7 @@ plt.title(f'Predicted Crime Occurrence Percentages for {hour} : {day}/{month}/{y
 plt.show()
 
 # Saving dataset to CSV for further use
-dataset.to_csv('crime_dataset.csv', index=False)
+# dataset.to_csv('crime_dataset.csv', index=False)
 
 # Load validation dataset
 validation_set_path = '../../datasets/validation_set_full.csv'
