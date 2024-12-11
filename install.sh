@@ -2,7 +2,7 @@
 # Installation script for required Python packages
 
 # Update pip to the latest version
-python3 -m pip install --upgrade pip
+python -m pip install --upgrade pip
 
 # Install required Python packages
 pip install -r requirements.txt
