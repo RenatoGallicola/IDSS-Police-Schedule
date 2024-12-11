@@ -1,0 +1,66 @@
+from ortools.linear_solver import pywraplp
+
+def allocate_policemen(loc_dist, loc_req, mins_threshold):
+    """
+    loc_dist: matrix where loc_dist[i][j] is the distance between policeman i and location j
+    loc_req: list where loc_req[i] is the number of policemen needed at location i
+    mins_threshold: threshold distance in minutes beyond which a policeman is considered late
+    """
+
+    # Average velocity of policemen in km/h
+    avg_vel = 30
+
+    dist_threshold = mins_threshold * avg_vel / 60.0
+    
+    num_policemen = len(loc_dist)
+    num_locations = len(loc_req)
+    
+    solver = pywraplp.Solver.CreateSolver('GLOP')
+    if not solver:
+        return None
+
+    # x[i][j] = 1 if policeman i is assigned to location j, else 0
+    x = []
+    for i in range(num_policemen):
+        x.append([solver.NumVar(0, 1, f'x[{i},{j}]') for j in range(num_locations)])
+
+    # Minimize total distance and number of late policemen
+    objective = solver.Objective()
+    for i in range(num_policemen):
+        for j in range(num_locations):
+            objective.SetCoefficient(x[i][j], loc_dist[i][j])
+    objective.SetMinimization()
+
+    # Each policeman is assigned to exactly one location
+    for i in range(num_policemen):
+        solver.Add(solver.Sum([x[i][j] for j in range(num_locations)]) == 1)
+
+    # Each location receives the required number of policemen
+    for j in range(num_locations):
+        solver.Add(solver.Sum([x[i][j] for i in range(num_policemen)]) >= loc_req[j])
+
+    # Compute the number of late policemen
+    late_policemen = []
+    for i in range(num_policemen):
+        late_policemen.append(solver.NumVar(0, 1, f'late_policeman[{i}]'))
+
+    for i in range(num_policemen):
+        solver.Add(late_policemen[i] >= solver.Sum([x[i][j] * (loc_dist[i][j] > dist_threshold) for j in range(num_locations)]))
+
+    # Combine late policemen and distance 
+    solver.Minimize(solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
+    status = solver.Solve()
+
+    if status == pywraplp.Solver.OPTIMAL:
+        # tot = solver.Objective().Value()
+        allocation = [[int(x[i][j].solution_value()) for j in range(num_locations)] for i in range(num_policemen)]
+        final_dest = []
+        for i in range(num_policemen):
+            for j in range(num_locations):
+                if allocation[i][j] == 1:
+                    final_dest.append(j)
+                    break
+        police_dist = [loc_dist[i][final_dest[i]] for i in range(num_policemen)]
+        return final_dest, police_dist
+    else:
+        return None
