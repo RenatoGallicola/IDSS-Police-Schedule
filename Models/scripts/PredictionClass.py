@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -11,14 +12,14 @@ from utils import mapLosAngeles, lat, lon, lat_scaled, lon_scaled, lon_min, lon_
 class PredictionClass:
 
     def __init__(self):
-        ecnoder = LabelEncoder()
-        scaler = StandardScaler()
-        model = load_model('../crime_prediction_lstm_model_Divided_30_EPOCH.h5')
+        self.encoder = LabelEncoder()
+        self.scaler = StandardScaler()
+        self.model = load_model('../crime_prediction_lstm_model_Divided_30_EPOCH.h5')
 
 
     
 
-    def generate_records(hour, day, month, year):
+    def generate_records(self, hour, day, month, year):
         records = []
         day_of_week = datetime(year, month, day, hour).strftime('%A')
 
