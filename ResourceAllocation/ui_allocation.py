@@ -193,7 +193,7 @@ class UIAllocation:
             dest, dist = self.__allocate()
             self.__update_ui_csv(dest, dist)
 
-            return dest
+            # return dest
         pg = PolicemanGenerator()
         pg.update_shift_numbers()
 

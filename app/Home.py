@@ -26,6 +26,10 @@ from utils import get_area_center
 
 ###########################################################
 
+def get_next_monday(date):
+    while date.weekday() != 0:  # 0 correspond à lundi
+        date += timedelta(days=1)
+    return date
 
 # Main page
 st.title("Police Dispatch IDSS")
@@ -37,17 +41,31 @@ if 'num_officers' not in st.session_state:
 
 st.session_state.num_officers = num_officers
 
-week = st.number_input("Which week do you want ?", min_value=1, max_value=52, step=1, value=1)
 
-if 'week' not in st.session_state:
-    st.session_state.week = None
+today = datetime.today()
+default_date = get_next_monday(today)
+selected_date = st.date_input(
+    "Choose a date (Only monday are valid):",
+    value=default_date
+)
 
-st.session_state.week = week
+if selected_date.weekday() != 0:
+        st.error("You need to choose a Monday")
+else:
+    day = selected_date.day
+    month = selected_date.month
+    year = selected_date.year
+
+    st.success(f"You chose : {selected_date.strftime('%A %d %B %Y')}.")
 
 if st.button("Click here to run the model",use_container_width=True):
-    with st.spinner("Model is loading, please wait..."):
-        ui_allocation = UIAllocation()
-        ui_allocation.week_allocation() 
+    if selected_date.weekday() != 0:
+        st.error("Please... monday..")
+    else:    
+        with st.spinner("Model is loading, please wait..."):
+            
+            ui_allocation = UIAllocation(num_officers=num_officers,day=day,month=month,year=year)
+            ui_allocation.week_allocation() 
 
 
 csv_file_name = "ResourceAllocation/ui_allocation.csv"
