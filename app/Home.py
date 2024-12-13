@@ -1,216 +1,167 @@
+import os
+import sys
 from datetime import datetime, timedelta
 
+import branca.colormap as cm
 import folium
 import numpy as np
 import pandas as pd
 import streamlit as st
+import tensorflow as tf
 from streamlit_folium import st_folium
 
+module_dir = os.path.dirname(__file__)
+module_path = os.path.join(module_dir, '../ResourceAllocation')
+sys.path.append(module_path)
 
-###########################################################
-# Mock function to load LSTM model
-@st.cache_resource
-def load_lstm_model():
-    # Replace with actual model loading code
-    return "LSTM Model"
+from ui_allocation import UIAllocation
 
-# Mock function to make predictions
-def make_predictions(model, num_officers, week_number, number_of_area):
-    # Replace with actual prediction code
-    return np.random.randint(1, num_officers, size=(7, 24, number_of_area))  # Mock data for 7 days, 24 hours, 5 areas
+module_dir = os.path.dirname(__file__)
+module_path = os.path.join(module_dir, '../Models/scripts')
+sys.path.append(module_path)
 
-# Mock function for resource allocation
-def allocate_resources(predictions):
-    # Replace with actual allocation code
-    return predictions  # Mock allocation
+# Import the UIAllocation class
 
-def get_week_dates(week_number, year=2024):
-    # Get the first day of the year
-    first_day_of_year = datetime(year, 1, 1)
-    # Calculate the first day of the given week
-    first_day_of_week = first_day_of_year + timedelta(weeks=week_number - 1)
-    # Generate all dates for the week
-    week_dates = [first_day_of_week + timedelta(days=i) for i in range(7)]
-    return week_dates
+from utils import get_area_center
 
-def generate_hourly_records_for_week(week_number, year=2024):
-    week_dates = get_week_dates(week_number, year)
-    records = []
-    for date in week_dates:
-        for hour in range(24):
-            record = {
-                'hour': hour,
-                'minute': 0,
-                'day': date.day,
-                'month': date.month,
-                'year': date.year
-            }
-            records.append(record)
-    return records
-
-# Input fields
-if 'num_officers' not in st.session_state:
-    st.session_state.num_officers = 10
-if 'week_number' not in st.session_state:
-    st.session_state.week_number = 1
-
-num_officers = st.number_input("Number of officers available for the week", min_value=10, step=1, value=st.session_state.num_officers)
-week_number = st.number_input("Week number in the year", min_value=1, max_value=52, step=1, value=st.session_state.week_number)
-
-st.session_state.num_officers = num_officers
-st.session_state.week_number = week_number
-
-# Load model and make predictions
-model = load_lstm_model()
-predictions = make_predictions(model, num_officers, week_number, 10) # <---- 10 is number of location
 ###########################################################
 
 
 # Main page
 st.title("Police Dispatch IDSS")
 
-### WARNING this parameters may be changed ??!!
-### BACKEND CALL ??
-number_of_location = 10
-area_names = [f'Area {i+1}' for i in range(number_of_location)]
-###
+num_officers = st.number_input("Number of officers available for the week", min_value=10, step=1, value=1000)
 
-day_mapping = {
-    "Monday": 0,
-    "Tuesday": 1,
-    "Wednesday": 2,
-    "Thursday": 3,
-    "Friday": 4,
-    "Saturday": 5,
-    "Sunday": 6
-}
+if 'num_officers' not in st.session_state:
+    st.session_state.num_officers = None
 
-#####################################  MAP  #####################################
+st.session_state.num_officers = num_officers
 
-st.subheader("Resource Allocation Map")
-day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
+week = st.number_input("Which week do you want ?", min_value=1, max_value=52, step=1, value=1)
 
-time_slot = st.radio(
-    "Select time slot",
-    options=["0-8", "8-16", "16-24", "Specific"]
-)
+if 'week' not in st.session_state:
+    st.session_state.week = None
 
-#### THIS WILL DISEPEAR ####
-def load_allocations_data():
-    st.session_state.allocations = allocate_resources(predictions)
-if 'allocations' not in st.session_state:
-    load_allocations_data()
-if st.button("Load allocation (button will be delete)"):
-    load_allocations_data()
-############################
+st.session_state.week = week
+
+if st.button("Click here to run the model",use_container_width=True):
+    with st.spinner("Model is loading, please wait..."):
+        ui_allocation = UIAllocation()
+        ui_allocation.week_allocation() 
 
 
-### BACKEND CALL 
-### Load the data of each location
-def load_location_data():
-    st.session_state.location_data = pd.DataFrame({
-        'lat': [34.0522 + np.random.uniform(-0.15, 0.15) for _ in range(number_of_location)], 
-        'lon': [-118.2437 + np.random.uniform(-0.15, 0.15) for _ in range(number_of_location)], 
-    })
+csv_file_name = "ResourceAllocation/ui_allocation.csv"
+try:
+    with st.spinner("Data are generating..."):    
+        df = df = pd.read_csv(csv_file_name, sep=',', header=0)
+        df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
+        for intVal in ["badge","shift","day","month","year","lat","lon","area","time_to_travel","distance"]:
+            df[intVal] = df[intVal].astype(float)
+        st.session_state.big_table = df
+except:
+    pass
 
-### Initialization if the data the first time we load the website
-if 'location_data' not in st.session_state:
-    load_location_data()
-
-### Button for load the data (can be deleted ???!!!)
-if st.button("Load location (button will be delete)"):
-    load_location_data()
-
-### BACKEND CALL
-### So this function must changes  to make this call
-### based on the day and the hour, return a list:
-## size: number_of_location
-## for each index the number of officiers at this location
-def get_officiers_data(day_of_week, hour_of_day):
-    allocations = st.session_state.allocations
-    return [allocations[day_mapping[day_of_week]][hour_of_day][i] for i in range(number_of_location)]
-
-### Same as last function, but with a range
-def get_officiers_data_bigger(day_of_week, start_hour, end_hour):
-    res = [0] * number_of_location
-    for hour in range(start_hour, end_hour):
-        aux = get_officiers_data(day_of_week, hour)
-        for i in range(number_of_location) :
-            res[i] += aux[i]
-    return res
-
-### if the Specific is selected, spawn the slider and call the good function
-if time_slot == "Specific":
-    hour_of_day = st.slider("Select hour of the day", 0, 23, 12)
-    st.session_state.officier_data = get_officiers_data(day_of_week, hour_of_day)
-### otherwise, call the other function with the range given
+if 'big_table' not in st.session_state:
+    st.subheader("Please load the prediction by clicking on the button")
 else:
-    start_hour, end_hour = map(int, time_slot.split('-'))
-    st.session_state.officier_data = get_officiers_data_bigger(day_of_week, start_hour, end_hour)
+    ###########################################################
+
+    day_mapping = {
+        "Monday": 1,
+        "Tuesday": 2,
+        "Wednesday": 3,
+        "Thursday": 4,
+        "Friday": 5,
+        "Saturday": 6,
+        "Sunday": 7
+    }
+    shift_mapping = {
+        "0-8": 1,
+        "8-16": 2,
+        "16-24": 3
+    }
+    ###########################################################
+
+    number_of_location = 11
+    area_names = [f'Area {i+1}' for i in range(number_of_location)]
+
+    @st.cache_resource
+    def load_location_data():
 
 
-### Set of the MAP
-if st.session_state.location_data is not None and st.session_state.officier_data is not None:
+        df =  pd.DataFrame({
+            'lat': [get_area_center(i)[0] for i in range(1,number_of_location+1)], 
+            'lon': [get_area_center(i)[1] for i in range(1,number_of_location+1)], 
+        })
 
-    # init
-    location_data = st.session_state.location_data
-    officier_data = st.session_state.officier_data
-    m = folium.Map(location=[34.0522, -118.2437], zoom_start=10)
-    max_officers = max(officier_data)
+        return df
 
-    # foreach location
-    for i in range(number_of_location):
+    if 'location_data' not in st.session_state:
+        st.session_state.location_data = load_location_data() 
+    ###########################################################
 
-        # init data of location
-        lat = location_data['lat'][i]
-        lon = location_data['lon'][i]
-        off = officier_data[i]
+    def count_policemen_by_area_day_shift(day, shift):  
+        local_df = st.session_state.big_table
+        filtered_df = local_df[(local_df['day'] == float(day)) & (local_df['shift'] == float(shift))]
+        area_counts = filtered_df['area'].value_counts().reindex(range(1,number_of_location+1), fill_value=0)
+        return area_counts.tolist()
+    ##########################  MAP  ##########################
 
-        circle_size = 5 + (off / max_officers) * 25
+    st.subheader("Resource Allocation Map")
+    day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
 
+    shift = st.selectbox("Select day of the week", list(shift_mapping.keys()))
+    st.session_state.officier_data = count_policemen_by_area_day_shift(day_mapping[day_of_week],shift_mapping[shift])
 
-        # draw the circle
-        folium.CircleMarker(
-            location=[lat, lon],
-            radius=circle_size,
-            color='red',
-            fill=True,
-            fillColor='red',
-            fillOpacity=0.3
-        ).add_to(m)
+    ### Set of the MAP
+    if st.session_state.location_data is not None and st.session_state.officier_data is not None:
 
-        # print the texte
-        folium.map.Marker(
-            [lat, lon],
-            tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
-            icon=folium.DivIcon(
-                html=f"""
-                <div style="transform: translate(-50%,-50%); font-size: 2em; font-weight: bold; color: black; text-align: center;">
-                    {off}
-                </div>
-                """
-            )
-        ).add_to(m)
+        # init
+        location_data = st.session_state.location_data
+        officier_data = st.session_state.officier_data
+        m = folium.Map(location=[34.0522, -118.2437], zoom_start=10)
+        max_officers = max(officier_data)
+        min_officers = min(officier_data)
 
-    st_folium(m, width=700, height=500)
-else:
-    # This part is only for avoid strange resizing behaviour
-    m = folium.Map(location=[34.0522, -118.2437], zoom_start=10)
-    st_folium(m, width=700, height=500)
+        # Create a color map
+        colormap = cm.LinearColormap(colors=['green', 'yellow', 'red'], vmin=min_officers, vmax=max_officers)
 
-#####################################  TABLE  #####################################
+        # foreach location
+        for i in range(number_of_location):
 
-st.subheader("Resource Allocation Table")
-selected_day = st.selectbox("Select day for table view", list(day_mapping.keys()))
+            # init data of location
+            lat = location_data['lat'][i]
+            lon = location_data['lon'][i]
+            off = officier_data[i]
 
-def generate_table_data(day_of_week):
-    table_data = []
-    for hour in range(24):
-        hourly_data = get_officiers_data(day_of_week, hour)
-        table_data.append(hourly_data)
-    return pd.DataFrame(table_data, columns=area_names)
+            circle_size = 5 + (off / max_officers) * 25
+            color = colormap(off)
 
-# Create DataFrame with hours as rows and areas as columns
-table_data = generate_table_data(selected_day)
-table_data.index = [f"{i}:00" for i in range(24)]
-st.table(table_data)
+            # draw the circle
+            folium.CircleMarker(
+                location=[lat, lon],
+                radius=circle_size,
+                color=color,
+                fill=True,
+                fillColor=color,
+                fillOpacity=0.7
+            ).add_to(m)
+
+            # print the texte
+            folium.map.Marker(
+                [lat, lon],
+                tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
+                icon=folium.DivIcon(
+                    html=f"""
+                    <div style="transform: translate(-50%,-50%); font-size: 2em; font-weight: bold; color: black; text-align: center;">
+                        {off}
+                    </div>
+                    """
+                )
+            ).add_to(m)
+
+        st_folium(m, width=700, height=500)
+    else:
+        # This part is only for avoid strange resizing behaviour
+        m = folium.Map(location=[34.0522, -118.2437], zoom_start=10)
+        st_folium(m, width=700, height=500)

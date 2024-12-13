@@ -1,19 +1,23 @@
 import csv
-from location_generator import Location
-from resource_allocation import allocate_policemen as ap
-from location_generator import get_map
-import numpy as np
 import os
 import sys
+
+import numpy as np
+from location_generator import Location, get_map
+from resource_allocation import allocate_policemen as ap
+
 module_dir = os.path.dirname(__file__)
 module_path = os.path.join(module_dir, '../Models/scripts')
 sys.path.append(module_path)
-from PredictionClass import PredictionClass
 import matplotlib.pyplot as plt
-from policeman_turn import Turn
 import pandas as pd
-from utils import lat as lat_array, lon as lon_array, get_area_number
 from policeman_generator import PolicemanGenerator
+from policeman_turn import Turn
+from PredictionClass import PredictionClass
+from utils import get_area_number
+from utils import lat as lat_array
+from utils import lon as lon_array
+
 
 class UIAllocation:
     def __init__(
@@ -188,10 +192,13 @@ class UIAllocation:
             self.__set_policeman_data()
             dest, dist = self.__allocate()
             self.__update_ui_csv(dest, dist)
+
             return dest
         pg = PolicemanGenerator()
         pg.update_shift_numbers()
 
-ui = UIAllocation()
-dest = ui.week_allocation()
-ui.show_allocation_map(dest)
+
+if __name__ == "__main__":
+    ui = UIAllocation()
+    dest = ui.week_allocation()
+    ui.show_allocation_map(dest)

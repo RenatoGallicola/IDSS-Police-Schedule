@@ -13,3 +13,9 @@ datasets/processed_crime_data_FULL.csv
 datasets/validation_set_full.csv
 Models/scripts/__pycache__/utils.cpython-312.pyc
 Models/scripts/test.ipynb
+*.pyc
+*.pyo
+ResourceAllocation/ui_allocatione.csv
+ResourceAllocation/location_data.csv
+ResourceAllocation/policeman_data.csv
+ResourceAllocation/ui_allocation.csv
