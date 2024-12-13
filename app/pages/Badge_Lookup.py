@@ -49,7 +49,7 @@ else:
 
     st.title("Police Schedule Lookup")
 
-    badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=29634)
+    badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=73723)
 
     officer_schedule = df[df['badge'] == badge_number]
 
