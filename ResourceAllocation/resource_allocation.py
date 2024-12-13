@@ -1,20 +1,19 @@
 from ortools.linear_solver import pywraplp
+from location_generator import Location
 
-def allocate_policemen(loc_dist, loc_req, mins_threshold, margin):
-    """
-    loc_dist: matrix where loc_dist[i][j] is the distance between policeman i and location j
-    loc_req: list where loc_req[i] is the number of policemen needed at location i
-    mins_threshold: threshold distance in minutes beyond which a policeman is considered late
-    """
+def allocate_policemen(loc_dist, loc_req, mins_threshold, margin, vel):
 
     # Average velocity of policemen in km/h
-    avg_vel = 30
+    avg_vel = vel
 
     dist_threshold = mins_threshold * avg_vel / 60.0
     
     num_policemen = len(loc_dist)
     num_locations = len(loc_req)
-    
+
+    max_dist = int(((Location.MAXLAT.value - Location.MINLAT.value)**2 + (Location.MAXLONG.value - Location.MINLONG.value)**2)**0.5)
+    delay_coeff = max_dist * num_policemen
+
     solver = pywraplp.Solver.CreateSolver('GLOP')
     if not solver:
         return None
@@ -52,7 +51,9 @@ def allocate_policemen(loc_dist, loc_req, mins_threshold, margin):
         solver.Add(late_policemen[i] >= solver.Sum([x[i][j] * (loc_dist[i][j] > dist_threshold) for j in range(num_locations)]))
 
     # Combine late policemen and distance 
-    solver.Minimize(10000*solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
+    #solver.Minimize(delay_coeff*solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
+    #solver.Minimize(solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
+    solver.Minimize(delay_coeff*solver.Sum(late_policemen) + solver.Sum([x[i][j] * loc_dist[i][j] for i in range(num_policemen) for j in range(num_locations)]))
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:

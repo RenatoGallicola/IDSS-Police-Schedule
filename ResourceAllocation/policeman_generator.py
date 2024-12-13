@@ -3,6 +3,8 @@ import random
 from faker import Faker
 from location_generator import Location
 from policeman_turn import Turn
+from location_generator import get_map
+import matplotlib.pyplot as plt
 
 class PolicemanGenerator:
     def __init__(
@@ -14,11 +16,38 @@ class PolicemanGenerator:
         self.__fake = Faker()
 
     def __generate_coordinates(self):
-        return round(random.uniform(Location.MINLAT.value, Location.MAXLAT.value), Location.PRECISION.value), \
-        round(random.uniform(Location.MINLONG.value, Location.MAXLONG.value), Location.PRECISION.value)
+        found = False
+        while not found:
+            lat = round(random.uniform(Location.MINLAT.value, Location.MAXLAT.value), Location.PRECISION.value)
+            long = round(random.uniform(Location.MINLONG.value, Location.MAXLONG.value), Location.PRECISION.value)
+            y_cells = int((Location.MAXLAT.value - Location.MINLAT.value) / Location.LAT_CELLSIZE.value) + 1
+            x_cells = int((Location.MAXLONG.value - Location.MINLONG.value) / Location.LON_CELLSIZE.value) + 1
+            lat_idx = lat * y_cells / (Location.MAXLAT.value - Location.MINLAT.value)
+            long_idx = long * x_cells / (Location.MAXLONG.value - Location.MINLONG.value)
+            if get_map()[int(lat_idx)][int(long_idx)] == 1:
+                found = True
+                return long, lat
+
 
     def __generate_badge_numbers(self, total):
         return random.sample(range(10000, 99999), total)
+
+    def show_policemen(self):
+        latitudes = []
+        longitudes = []
+        
+        with open(self.__file_name, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                longitudes.append(float(row[1]))
+                latitudes.append(float(row[2]))
+        
+        plt.scatter(longitudes, latitudes, c='blue', marker='o')
+        plt.title('Policemen Locations')
+        plt.xlabel('Longitude')
+        plt.ylabel('Latitude')
+        plt.grid(True)
+        plt.show()
 
     def generate_policemen(self):
         badge_numbers = self.__generate_badge_numbers(self.__tot_pol)
@@ -51,5 +80,6 @@ class PolicemanGenerator:
                 writer = csv.writer(csvfile)
                 writer.writerows(updated_pol_data)
     
-pol_generator = PolicemanGenerator()
-pol_generator.generate_policemen()
+# pol_generator = PolicemanGenerator()
+# pol_generator.generate_policemen()
+# pol_generator.show_policemen()

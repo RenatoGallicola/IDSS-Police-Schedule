@@ -18,19 +18,17 @@ from policeman_generator import PolicemanGenerator
 class UIAllocation:
     def __init__(
             self,
-            tolerance = 10,
+            tolerance = 15,
             num_policemen = 1000,
-            hour = 8,
             day = 1,
             month = 1,
             year = 2024,
-            avg_vel = 30
+            avg_vel = 40
         ):
         self.__tolerance = tolerance
         self.__num_policemen = num_policemen
         self.__location_data = self.__get_location_data()
         self.__policeman_data = None
-        self.__hour = hour
         self.__day = day
         self.__month = month
         self.__year = year
@@ -88,8 +86,8 @@ class UIAllocation:
 
         remaining_policemen = self.__num_policemen - np.sum(loc_req)
         loc_req = loc_req.flatten().tolist()
-
-        self.__show_location_requirements(loc_req)
+        
+        # self.__show_location_requirements(loc_req)
 
         return loc_req, remaining_policemen
     
@@ -113,7 +111,7 @@ class UIAllocation:
     def __compute_margin(self, remain):
         map_la = get_map()
         valid_loc = np.sum(map_la)
-        margin = round(remain / valid_loc) + 1
+        margin = remain // valid_loc + 1
         return margin
 
     def show_allocation_map(self, dest):
@@ -145,7 +143,7 @@ class UIAllocation:
         loc_req, remain = self.__location_requirements()
         tol = self.__tolerance
         margin = self.__compute_margin(remain)
-        dest, dist = ap(loc_dist, loc_req, tol, margin)
+        dest, dist = ap(loc_dist, loc_req, tol, margin, self.__avg_vel)
         return dest, dist
 
     def __empty_csv(self):
@@ -155,7 +153,7 @@ class UIAllocation:
     def __update_ui_csv(self, dest, dist): 
         columns = ['badge', 'name', 'shift', 'day', 'month', 'year', 'group', 'lat', 'lon', 'area', 'time_to_travel', 'distance']
         data = []
-
+        
         for i, policeman in enumerate(self.__policeman_data):
             name, _, _, group, badge = policeman
             shift = self.__turn
@@ -170,11 +168,10 @@ class UIAllocation:
             lon_idx = cell_idx % 31
             lat = lat_array[lat_idx]
             lon = lon_array[lon_idx]
-
             area = get_area_number(lat_idx, lon_idx)
 
             data.append([badge, name, shift, day, month, year, group, lat, lon, area, time_to_travel, distance])
-
+              
         df = pd.DataFrame(data, columns=columns)
         if os.path.exists(self.__csv_name):
             df_existing = pd.read_csv(self.__csv_name)
@@ -188,10 +185,9 @@ class UIAllocation:
             self.__set_policeman_data()
             dest, dist = self.__allocate()
             self.__update_ui_csv(dest, dist)
-            return dest
+            #ui.show_allocation_map(dest)
         pg = PolicemanGenerator()
         pg.update_shift_numbers()
 
 ui = UIAllocation()
-dest = ui.week_allocation()
-ui.show_allocation_map(dest)
+ui.week_allocation()
