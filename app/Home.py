@@ -55,8 +55,10 @@ try:
     with st.spinner("Data are generating..."):    
         df = df = pd.read_csv(csv_file_name, sep=',', header=0)
         df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
-        for intVal in ["badge","shift","day","month","year","lat","lon","area","time_to_travel","distance"]:
-            df[intVal] = df[intVal].astype(float)
+        for floatVal in ["lat","lon","time_to_travel","distance"]:
+            df[floatVal] = df[floatVal].astype(float)
+        for intVal in ["badge","shift","day","month","year","area"]:
+            df[intVal] = df[intVal].astype(int)
         st.session_state.big_table = df
 except:
     pass
