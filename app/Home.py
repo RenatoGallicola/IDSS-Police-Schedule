@@ -78,13 +78,11 @@ try:
         for intVal in ["badge","shift","day","month","year","area"]:
             df[intVal] = df[intVal].astype(int)
 
+        # shift code from 1 to 21 before
+        # shift code from 1 to 3 after, and day from 1 to 7
         df['day'] = df['shift'] // 3 + 1
-
         df['shift'] = df['shift'] % 3
         df['shift'] = df['shift'].replace(0,3)
-
-        print(df)
-
 
         st.session_state.big_table = df
 except:
