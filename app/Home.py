@@ -80,7 +80,7 @@ try:
 
         # shift code from 1 to 21 before
         # shift code from 1 to 3 after, and day from 1 to 7
-        df['day'] = df['shift'] // 3 + 1
+        df['day'] = (df['shift']-1) // 3 + 1
         df['shift'] = df['shift'] % 3
         df['shift'] = df['shift'].replace(0,3)
 
