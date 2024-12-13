@@ -4,7 +4,7 @@ from tensorflow.keras.losses import binary_crossentropy
 from tensorflow.keras import backend as K
 import tensorflow as tf
 
-mapLosAngeles = np.array([
+mapLosAngeles = np.flip(np.array([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
@@ -35,8 +35,7 @@ mapLosAngeles = np.array([
     [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), axis=0)
 
 num_lat_intervals = 30
 num_lon_intervals = 30
@@ -107,7 +106,7 @@ temporal_columns = ['shift', 'day', 'month', 'year', 'day_of_week',
                     'shift_sin', 'shift_cos', 'day_sin', 'day_cos',
                     'month_sin', 'month_cos', 'day_of_week_sin', 'day_of_week_cos']
 
-class_weight_dict= {0: 0.7788253176824149, 1: 1.3966187219940793}
+class_weight_dict = {0: 0.7788253176824149, 1: 1.3966187219940793}
 
 
 def weighted_binary_crossentropy(y_true, y_pred):
@@ -119,3 +118,70 @@ def weighted_binary_crossentropy(y_true, y_pred):
     bce = binary_crossentropy(y_true, y_pred)
     weighted_bce = weights * bce
     return K.mean(weighted_bce)
+
+
+areas = {
+    1: [(0, 7), (5, 16)],
+    2: [(0, 0), (10, 7)],
+    3: [(5, 7), (10, 16)],
+    4: [(0, 16), (10, 25)],
+    5: [(10, 5), (15, 11)],
+    6: [(10, 11), (15, 20)],
+    7: [(10, 20), (15, 25)],
+    8: [(9, 25), (15, 30)],
+    9: [(15, 8), (20, 17)],
+    10: [(15, 17), (20, 27)],
+    11: [(20, 18), (30, 27)],
+}
+
+area_centers = {
+    1: (3, 13),
+    2: (5, 5),
+    3: (7, 13),
+    4: (5, 20),
+    5: (13, 8),
+    6: (13, 15),
+    7: (13, 22),
+    8: (13, 27),
+    9: (18, 13),
+    10: (18, 22),
+    11: (25, 23),
+}
+
+
+def get_area_number(x, y):
+    """
+    This function takes two indices (x, y) and returns the area number
+    based on the defined area boundaries.
+
+    Args:
+    x (int): X-coordinate (0 to 30)
+    y (int): Y-coordinate (0 to 30)
+
+    Returns:
+    int: The area number (1 to 11) or 0 if not in any defined area
+    """
+
+    # Check which area the point belongs to
+    for area_number, ((x_min, y_min), (x_max, y_max)) in areas.items():
+        if x_min <= x <= x_max and y_min <= y <= y_max:
+            return area_number
+
+    # If the point is not in any area, return 0
+    return 0
+
+
+def get_area_center(area_number):
+    """
+    This function takes an area number and returns the center coordinates (x, y).
+
+    Args:
+    area_number (int): The area number (1 to 11)
+
+    Returns:
+    tuple: The center coordinates (x, y) or None if the area number is invalid
+    """
+
+    # Return the center coordinates separately for the given area number
+    center = area_centers.get(area_number, (None, None))
+    return lat[center[0]], lon[center[1]]
