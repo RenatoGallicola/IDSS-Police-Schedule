@@ -71,7 +71,7 @@ print("Shape of X_spatial:", X_spatial.shape)    # (961, 1, 2)
 
 
 # Specifica la funzione personalizzata per il caricamento
-model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
+model_path = 'Models/crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
 
 model = tf.keras.models.load_model(model_path,
                                    custom_objects={'weighted_binary_crossentropy': weighted_binary_crossentropy})

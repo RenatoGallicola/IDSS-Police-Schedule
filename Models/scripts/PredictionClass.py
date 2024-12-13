@@ -8,7 +8,7 @@ import tensorflow as tf
 from utils import mapLosAngeles, lat_scaled, lon_scaled, add_cyclic_features, columns_periods, spatial_columns, \
     temporal_columns, weighted_binary_crossentropy
 
-model_path = '../crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
+model_path = 'Models/crime_prediction_lstm_model_Divided_30_EPOCH_with_shift_weighted.h5'
 
 
 class PredictionClass:
