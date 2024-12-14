@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 import tensorflow as tf
 from streamlit_folium import st_folium
+import time
 
 module_dir = os.path.dirname(__file__)
 module_path = os.path.join(module_dir, '../ResourceAllocation')
@@ -23,6 +24,7 @@ sys.path.append(module_path)
 # Import the UIAllocation class
 
 from utils import get_area_center
+import threading
 
 ###########################################################
 
@@ -64,8 +66,22 @@ if st.button("Click here to run the model",use_container_width=True):
     else:    
         with st.spinner("Model is loading, please wait..."):
             
+            tot_shift = 21
+            shift = 0
+            progress_text = f"Processing shift {shift}/{tot_shift}"
+            progress_bar = st.progress(0)
+
             ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
-            ui_allocation.week_allocation() 
+            ui_allocation.week_allocation()
+
+            while ui_allocation.get_schedule_completed() == False:
+                shift = ui_allocation.get_shift()
+                progress_text = f"Processing shift {shift}/{tot_shift}" 
+                perc = shift * 100/tot_shift
+                progress_bar.progress(int(perc), text=progress_text)
+                time.sleep(2)
+            
+            progress_bar.empty()
 
 
 csv_file_name = "ResourceAllocation/ui_allocation.csv"
@@ -161,26 +177,29 @@ else:
             lon = location_data['lon'][i]
             off = officier_data[i]
 
-            circle_size = 5 + (off / max_officers) * 25
+            circle_size = 10 + (off / max_officers) * 25
             color = colormap(off)
 
             # draw the circle
             folium.CircleMarker(
                 location=[lat, lon],
                 radius=circle_size,
+                tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
                 color=color,
                 fill=True,
                 fillColor=color,
                 fillOpacity=0.7
             ).add_to(m)
 
-            # print the texte
+            # print the text
             folium.map.Marker(
                 [lat, lon],
                 tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
                 icon=folium.DivIcon(
+                    icon_size=(70,36),
+                    icon_anchor=(0,0),
                     html=f"""
-                    <div style="transform: translate(-50%,-50%); font-size: 2em; font-weight: bold; color: black; text-align: center;">
+                    <div style="font-size: 2em; font-weight: bold; color: black; text-align: center; transform: translate(-50%,-50%);">
                         {off}
                     </div>
                     """
