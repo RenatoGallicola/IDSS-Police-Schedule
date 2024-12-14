@@ -185,6 +185,7 @@ else:
             folium.CircleMarker(
                 location=[lat, lon],
                 radius=circle_size,
+                tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
                 color=color,
                 fill=True,
                 fillColor=color,
@@ -196,7 +197,7 @@ else:
                 [lat, lon],
                 tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
                 icon=folium.DivIcon(
-                    icon_size=(150,36),
+                    icon_size=(70,36),
                     icon_anchor=(0,0),
                     html=f"""
                     <div style="font-size: 2em; font-weight: bold; color: black; text-align: center; transform: translate(-50%,-50%);">
