@@ -66,7 +66,7 @@ if st.button("Click here to run the model",use_container_width=True):
     else:    
         with st.spinner("Model is loading, please wait..."):
             
-            tot_shift = 4
+            tot_shift = 21
             shift = 0
             progress_text = f"Processing shift {shift}/{tot_shift}"
             progress_bar = st.progress(0)
@@ -177,8 +177,7 @@ else:
             lon = location_data['lon'][i]
             off = officier_data[i]
 
-            #circle_size = 5 + (off / max_officers) * 25
-            circle_size = 30
+            circle_size = 10 + (off / max_officers) * 25
             color = colormap(off)
 
             # draw the circle
