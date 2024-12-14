@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+number_of_location = 11
+area_names = [f'Area {i+1}' for i in range(number_of_location)]
+
 
 def color_shifts(val):
     """
@@ -11,14 +14,10 @@ def color_shifts(val):
     - Dark blue for morning shift
     - Dark orange for evening shift
     """
-    if val == 'Night Shift':
-        return 'background-color: #006400; color: white'  # Dark Green
-    elif val == 'Morning Shift':
-        return 'background-color: #00008B; color: white'  # Dark Blue
-    elif val == 'Evening Shift':
-        return 'background-color: #8B4513; color: white'  # Saddle Brown
-    else:
+    if val == '':
         return 'background-color: #808080; color: white'  # Dark Grey
+    else:
+        return 'background-color: #006400; color: white'  # Dark Green
 
 def get_shift_name(shift_num):
     """Convert shift number to shift name"""
@@ -49,7 +48,7 @@ else:
 
     st.title("Police Schedule Lookup")
 
-    badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=73723)
+    badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=24960)
 
     officer_schedule = df[df['badge'] == badge_number]
 
@@ -85,7 +84,10 @@ else:
                 ]
                 
                 # If shift exists, mark with shift name, otherwise mark as empty
-                shift_row[day_name] = shift_name if not day_shift.empty else ""
+                if day_shift.empty:
+                    shift_row[day_name] = ""
+                else:    
+                    shift_row[day_name] = area_names[int(day_shift["area"].iloc[0])-1]
             
             schedule_data.append(shift_row)
 
@@ -125,14 +127,26 @@ else:
         
         # Prepare shift details data
         shift_details_data = []
+        
+        existing_shifts = set()
+
         for _, row in officer_schedule.iterrows():
-            shift_detail = {
-                "Day": get_day_name(row['day']),
-                "Shift": get_shift_name(row['shift']),
-                "Time to Travel": row.get('time_to_travel', 'N/A'),
-                "Distance": row.get('distance', 'N/A')
-            }
-            shift_details_data.append(shift_detail)
+            day_name = get_day_name(row['day'])
+            shift_name = get_shift_name(row['shift'])
+            
+            # Vérifiez si la combinaison jour/shift existe déjà
+            if (day_name, shift_name) not in existing_shifts:
+                shift_detail = {
+                    "Day": day_name,
+                    "Shift": shift_name,
+                    "Time to Travel": row.get('time_to_travel', 'N/A'),
+                    "Distance": row.get('distance', 'N/A'),
+                    "Area": area_names[row.get('area', 'N/A') - 1]
+                }
+                shift_details_data.append(shift_detail)
+                
+                # Ajoutez cette combinaison à l'ensemble
+                existing_shifts.add((day_name, shift_name))
         
         # Create DataFrame for shift details
         shift_details_df = pd.DataFrame(shift_details_data)
