@@ -1,8 +1,8 @@
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.losses import binary_crossentropy
-from tensorflow.keras import backend as K
 import tensorflow as tf
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras import backend as K
+from tensorflow.keras.losses import binary_crossentropy
 
 mapLosAngeles = np.array([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
@@ -184,4 +184,5 @@ def get_area_center(area_number):
 
     # Return the center coordinates separately for the given area number
     center = area_centers.get(area_number, (None, None))
-    return lat[center[0]], lon[center[1]]
+    lat_invert = lat[::-1]
+    return lat_invert[center[0]], lon[center[1]]
