@@ -127,15 +127,26 @@ else:
         
         # Prepare shift details data
         shift_details_data = []
+        
+        existing_shifts = set()
+
         for _, row in officer_schedule.iterrows():
-            shift_detail = {
-                "Day": get_day_name(row['day']),
-                "Shift": get_shift_name(row['shift']),
-                "Time to Travel": row.get('time_to_travel', 'N/A'),
-                "Distance": row.get('distance', 'N/A'),
-                "Area": area_names[row.get('area', 'N/A')-1]
-            }
-            shift_details_data.append(shift_detail)
+            day_name = get_day_name(row['day'])
+            shift_name = get_shift_name(row['shift'])
+            
+            # Vérifiez si la combinaison jour/shift existe déjà
+            if (day_name, shift_name) not in existing_shifts:
+                shift_detail = {
+                    "Day": day_name,
+                    "Shift": shift_name,
+                    "Time to Travel": row.get('time_to_travel', 'N/A'),
+                    "Distance": row.get('distance', 'N/A'),
+                    "Area": area_names[row.get('area', 'N/A') - 1]
+                }
+                shift_details_data.append(shift_detail)
+                
+                # Ajoutez cette combinaison à l'ensemble
+                existing_shifts.add((day_name, shift_name))
         
         # Create DataFrame for shift details
         shift_details_df = pd.DataFrame(shift_details_data)
