@@ -20,17 +20,18 @@ class Location(Enum):
 def get_map():
     return np.flipud(map)
 
-# filename = 'location_data.csv'
-filename = 'ResourceAllocation/location_data.csv'
+if __name__ == "__main__":
+    # filename = 'location_data.csv'
+    filename = 'ResourceAllocation/location_data.csv'
 
-mult = 10 ** Location.PRECISION.value
+    mult = 10 ** Location.PRECISION.value
 
-data = []
-for lat in range(int(Location.MINLAT.value * mult), int(Location.MAXLAT.value * mult), int(Location.LAT_CELLSIZE.value * mult)):
-    for long in range(int(Location.MINLONG.value * mult), int(Location.MAXLONG.value * mult), int(Location.LON_CELLSIZE.value * mult)):
-        data.append((lat / float(mult), long / float(mult)))
+    data = []
+    for lat in range(int(Location.MINLAT.value * mult), int(Location.MAXLAT.value * mult), int(Location.LAT_CELLSIZE.value * mult)):
+        for long in range(int(Location.MINLONG.value * mult), int(Location.MAXLONG.value * mult), int(Location.LON_CELLSIZE.value * mult)):
+            data.append((lat / float(mult), long / float(mult)))
 
-# Header: Location Latitude, Location Longitude
-with open(filename, 'w', newline='') as csvfile:
-    csvwriter = csv.writer(csvfile)
-    csvwriter.writerows(data)
+    # Header: Location Latitude, Location Longitude
+    with open(filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerows(data)

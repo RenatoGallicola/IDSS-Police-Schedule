@@ -17,6 +17,7 @@ from PredictionClass import PredictionClass
 from utils import get_area_number
 from utils import lat as lat_array
 from utils import lon as lon_array
+import threading
 
 
 class UIAllocation:
@@ -40,6 +41,7 @@ class UIAllocation:
         self.__p_class = PredictionClass()
         self.__csv_name = 'ResourceAllocation/ui_allocation.csv'
         self.__avg_vel = avg_vel
+        self.__schedule_completed = False
     
     def __get_current_location_data(self):
         return self.__location_data
@@ -182,19 +184,44 @@ class UIAllocation:
             df = pd.concat([df_existing, df], ignore_index=True)
         df.to_csv(self.__csv_name, index=False)
 
-    def week_allocation(self):
-        self.__empty_csv()
-        for i in range(Turn.NUM_WEEKLY_TURNS.value):
-            self.__turn = i + 1
-            self.__set_policeman_data()
-            dest, dist = self.__allocate()
-            self.__update_ui_csv(dest, dist)
-            #ui.show_allocation_map(dest)
-        pg = PolicemanGenerator()
-        pg.update_shift_numbers()
+    def get_shift(self):
+        return self.__turn
+    
+    def get_schedule_completed(self):
+        return self.__schedule_completed
 
+    def __threaded_allocation(self):
+        def allocation_task():
+            self.__empty_csv()
+            for i in range(Turn.NUM_WEEKLY_TURNS.value):
+            #for i in range(4):
+                self.__turn = i + 1
+                self.__set_policeman_data()
+                dest, dist = self.__allocate()
+                self.__update_ui_csv(dest, dist)
+            self.__schedule_completed = True
+            pg = PolicemanGenerator()
+            pg.update_shift_numbers()
+
+        allocation_thread = threading.Thread(target=allocation_task)
+        allocation_thread.start()
+
+    def week_allocation(self, threaded = True):
+        if threaded:
+            self.__threaded_allocation()
+        else:
+            self.__empty_csv()
+            # for i in range(Turn.NUM_WEEKLY_TURNS.value):
+            for i in range(4):
+                self.__turn = i + 1
+                self.__set_policeman_data()
+                dest, dist = self.__allocate()
+                self.__update_ui_csv(dest, dist)
+                #ui.show_allocation_map(dest)
+            # pg = PolicemanGenerator()
+            # pg.update_shift_numbers()
 
 if __name__ == "__main__":
     ui = UIAllocation()
-    dest = ui.week_allocation()
+    dest = ui.week_allocation(threaded=False)
     ui.show_allocation_map(dest)

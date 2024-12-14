@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 import tensorflow as tf
 from streamlit_folium import st_folium
+import time
 
 module_dir = os.path.dirname(__file__)
 module_path = os.path.join(module_dir, '../ResourceAllocation')
@@ -23,6 +24,7 @@ sys.path.append(module_path)
 # Import the UIAllocation class
 
 from utils import get_area_center
+import threading
 
 ###########################################################
 
@@ -64,8 +66,22 @@ if st.button("Click here to run the model",use_container_width=True):
     else:    
         with st.spinner("Model is loading, please wait..."):
             
-            ui_allocation = UIAllocation(num_officers=num_officers,day=day,month=month,year=year)
-            ui_allocation.week_allocation() 
+            tot_shift = 4
+            shift = 0
+            progress_text = f"Processing shift {shift}/{tot_shift}"
+            progress_bar = st.progress(0)
+
+            ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
+            ui_allocation.week_allocation()
+
+            while ui_allocation.get_schedule_completed() == False:
+                shift = ui_allocation.get_shift()
+                progress_text = f"Processing shift {shift}/{tot_shift}" 
+                perc = shift * 100/tot_shift
+                progress_bar.progress(int(perc), text=progress_text)
+                time.sleep(2)
+            
+            progress_bar.empty()
 
 
 csv_file_name = "ResourceAllocation/ui_allocation.csv"
