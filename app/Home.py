@@ -64,7 +64,7 @@ if st.button("Click here to run the model",use_container_width=True):
     else:    
         with st.spinner("Model is loading, please wait..."):
             
-            ui_allocation = UIAllocation(num_officers=num_officers,day=day,month=month,year=year)
+            ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
             ui_allocation.week_allocation() 
 
 
