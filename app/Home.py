@@ -177,7 +177,8 @@ else:
             lon = location_data['lon'][i]
             off = officier_data[i]
 
-            circle_size = 5 + (off / max_officers) * 25
+            #circle_size = 5 + (off / max_officers) * 25
+            circle_size = 30
             color = colormap(off)
 
             # draw the circle
@@ -190,13 +191,15 @@ else:
                 fillOpacity=0.7
             ).add_to(m)
 
-            # print the texte
+            # print the text
             folium.map.Marker(
                 [lat, lon],
                 tooltip=folium.Tooltip(f"{off} officers are requiered at {area_names[i]}", sticky=True),
                 icon=folium.DivIcon(
+                    icon_size=(150,36),
+                    icon_anchor=(0,0),
                     html=f"""
-                    <div style="transform: translate(-50%,-50%); font-size: 2em; font-weight: bold; color: black; text-align: center;">
+                    <div style="font-size: 2em; font-weight: bold; color: black; text-align: center; transform: translate(-50%,-50%);">
                         {off}
                     </div>
                     """
