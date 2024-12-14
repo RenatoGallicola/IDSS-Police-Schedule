@@ -192,7 +192,7 @@ class UIAllocation:
 
     def __threaded_allocation(self):
         def allocation_task():
-            self.__empty_csv()
+            #self.__empty_csv()
             for i in range(Turn.NUM_WEEKLY_TURNS.value):
             #for i in range(4):
                 self.__turn = i + 1
@@ -210,7 +210,7 @@ class UIAllocation:
         if threaded:
             self.__threaded_allocation()
         else:
-            self.__empty_csv()
+            #self.__empty_csv()
             # for i in range(Turn.NUM_WEEKLY_TURNS.value):
             for i in range(4):
                 self.__turn = i + 1

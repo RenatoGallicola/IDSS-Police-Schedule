@@ -43,6 +43,7 @@ if 'num_officers' not in st.session_state:
 
 st.session_state.num_officers = num_officers
 
+csv_file_name = "ResourceAllocation/ui_allocation.csv"
 
 today = datetime.today()
 default_date = get_next_monday(today)
@@ -60,35 +61,54 @@ else:
 
     st.success(f"You chose : {selected_date.strftime('%A %d %B %Y')}.")
 
+tot_shift = 21
+
+def generate_data():
+    with st.spinner("Model is loading, please wait..."):
+                
+                
+                shift = 0
+                progress_text = f"Processing shift {shift}/{tot_shift}"
+                progress_bar = st.progress(0)
+
+                ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
+                ui_allocation.week_allocation()
+
+                while ui_allocation.get_schedule_completed() == False:
+                    shift = ui_allocation.get_shift()
+                    progress_text = f"Processing shift {shift}/{tot_shift}" 
+                    perc = shift * 100/tot_shift
+                    progress_bar.progress(int(perc), text=progress_text)
+                    time.sleep(2)
+                
+                progress_bar.empty()
+
+
 if st.button("Click here to run the model",use_container_width=True):
     if selected_date.weekday() != 0:
         st.error("Please... monday..")
-    else:    
-        with st.spinner("Model is loading, please wait..."):
+    else: 
+        if os.path.exists(csv_file_name):
+                df = pd.read_csv(csv_file_name, sep=',', header=0)
+                df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
+                df = df[(df['day'] == day) & (df['month'] == month) & (df['year'] == year)]
+                if not df.empty:
+                    expected_rows = num_officers * tot_shift
+                    if len(df) == expected_rows:
+                        st.success("Data already exists for the selected date and is complete. Skipping generation.")
+                    else:
+                        df = df[(df['day'] != day) | (df['month'] != month) | (df['year'] != year)]
+                        df.to_csv(csv_file_name, index=False)
+                        st.warning("Data already exists for another amount of officemen. Re-generation.")
+                        generate_data()
+                    
+                else:
+                     generate_data()
+        else: 
+             generate_data()
             
-            tot_shift = 21
-            shift = 0
-            progress_text = f"Processing shift {shift}/{tot_shift}"
-            progress_bar = st.progress(0)
-
-            ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
-            ui_allocation.week_allocation()
-
-            while ui_allocation.get_schedule_completed() == False:
-                shift = ui_allocation.get_shift()
-                progress_text = f"Processing shift {shift}/{tot_shift}" 
-                perc = shift * 100/tot_shift
-                progress_bar.progress(int(perc), text=progress_text)
-                time.sleep(2)
-            
-            progress_bar.empty()
-
-
-csv_file_name = "ResourceAllocation/ui_allocation.csv"
 try:
     with st.spinner("Data are generating..."):    
-        df = df = pd.read_csv(csv_file_name, sep=',', header=0)
-        df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
         for floatVal in ["lat","lon","time_to_travel","distance"]:
             df[floatVal] = df[floatVal].astype(float)
         for intVal in ["badge","shift","day","month","year","area"]:
@@ -150,10 +170,10 @@ else:
         return area_counts.tolist()
     ##########################  MAP  ##########################
 
-    st.subheader("Resource Allocation Map")
+    st.subheader(f"Resource Allocation Map from : {selected_date.strftime('%d %B %Y')}.")
     day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
 
-    shift = st.selectbox("Select day of the week", list(shift_mapping.keys()))
+    shift = st.selectbox("Select shift", list(shift_mapping.keys()))
     st.session_state.officier_data = count_policemen_by_area_day_shift(day_mapping[day_of_week],shift_mapping[shift])
 
     ### Set of the MAP
