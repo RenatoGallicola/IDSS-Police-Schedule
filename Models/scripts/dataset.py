@@ -1,11 +1,12 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from PIL import Image, ImageDraw, ImageFont
 import os
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from PIL import Image, ImageDraw, ImageFont
+
 # Step 1: Load the Dataset
-dataset_path = '../../datasets/crime_data.csv'
+dataset_path = '../../Data/crime_dataset.csv'
 try:
     df = pd.read_csv(dataset_path)
 except Exception as e:

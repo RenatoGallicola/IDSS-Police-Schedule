@@ -1,4 +1,9 @@
 #!/bin/bash
+
+set -e
+set -x
+
+# Warning, it is advisable to do this in a virtual environment 
 # Installation script for required Python packages
 
 # Update pip to the latest version
