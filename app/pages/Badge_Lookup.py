@@ -5,6 +5,36 @@ import streamlit as st
 number_of_location = 11
 area_names = [f'Area {i+1}' for i in range(number_of_location)]
 
+policeman_csv = "ResourceAllocation/policeman_data.csv"
+df_police = pd.read_csv(policeman_csv, header=None)
+csv_badge_column_idx = 4
+badge_list = df_police.iloc[:, csv_badge_column_idx]
+
+st.markdown(
+            """
+            <style>
+            .stButton>button {
+                margin-top: 28px;
+                height: 2em;
+                width: 8em;
+                font-size: 1em;
+                background-color: #15171f; 
+                color: white;          
+                border: solid 1px #43444b;              
+                border-radius: 10px; 
+            }
+            .stButton>button:hover {
+               color: #e15a53;
+               border: solid 1px #e15a53;
+            }   
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+def update_index(badge):
+    if badge in badge_list.values:
+        st.session_state.index = badge_list[badge_list == badge].index[0]
 
 def color_shifts(val):
     """
@@ -48,8 +78,27 @@ else:
 
     st.title("Police Schedule Lookup")
 
-    badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=24960)
+    if 'index' not in st.session_state:
+        st.session_state.index = 0
 
+    col1, col2, col3 = st.columns([3, 1, 1])
+
+    with col2:
+        if st.button("Previous"):
+            st.session_state.index = max(0, st.session_state.index - 1)
+        
+    with col3:
+        if st.button("Next"):
+            st.session_state.index = min(len(badge_list) - 1, st.session_state.index + 1)
+
+    with col1:
+        badge = badge_list[st.session_state.index]
+        badge_number = st.number_input("BADGE NUMBER", min_value=10000, max_value=100000, step=1, value=badge)
+        update_index(badge_number)
+
+    # badge = df_police.iloc[curr_badge_idx, csv_badge_column_idx]
+    # badge_number = st.number_input("Badge number", min_value=10000, max_value=100000, step=1, value=badge)
+    
     officer_schedule = df[df['badge'] == badge_number]
 
     if not officer_schedule.empty:
@@ -98,7 +147,7 @@ else:
         schedule_df.set_index('Shift', inplace=True)
 
         # Display title
-        st.subheader(f"Schedule for Badge Number {badge_number}")
+        st.subheader(f"Schedule for Badge Number {badge_number}: {df_police.iloc[st.session_state.index, 0]}")
         
         # Custom CSS to make cells larger
         st.markdown("""
@@ -139,8 +188,8 @@ else:
                 shift_detail = {
                     "Day": day_name,
                     "Shift": shift_name,
-                    "Time to Travel": row.get('time_to_travel', 'N/A'),
-                    "Distance": row.get('distance', 'N/A'),
+                    "Time to Travel (minutes)": row.get('time_to_travel', 'N/A'),
+                    "Distance (km)": row.get('distance', 'N/A'),
                     "Area": area_names[row.get('area', 'N/A') - 1]
                 }
                 shift_details_data.append(shift_detail)
@@ -151,8 +200,8 @@ else:
         # Create DataFrame for shift details
         shift_details_df = pd.DataFrame(shift_details_data)
         
-        # Display shift details table
-        st.dataframe(shift_details_df, use_container_width=True)
+        # Display shift details table without index
+        st.dataframe(shift_details_df, hide_index=True, use_container_width=True)
 
     else:
-        st.subheader("This badge number doesn't exist...")
+        st.subheader("The selected badge number does not exist...")

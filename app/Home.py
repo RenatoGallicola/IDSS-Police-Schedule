@@ -29,7 +29,8 @@ import threading
 ###########################################################
 
 def get_next_monday(date):
-    while date.weekday() != 0:  # 0 correspond à lundi
+    date = datetime.strptime(date, '%d/%m/%Y')
+    while date.weekday() != 0:  # 0 corresponds to Monday
         date += timedelta(days=1)
     return date
 
@@ -45,27 +46,27 @@ st.session_state.num_officers = num_officers
 
 csv_file_name = "ResourceAllocation/ui_allocation.csv"
 
-today = datetime.today()
+today = datetime.today().strftime('%d/%m/%Y')
 default_date = get_next_monday(today)
 selected_date = st.date_input(
-    "Choose a date (Only monday are valid):",
-    value=default_date
+    "Select a starting date (only Mondays are valid):",
+    value=default_date,
+    format="DD/MM/YYYY"
 )
 
 if selected_date.weekday() != 0:
-        st.error("You need to choose a Monday")
+        st.error("Selected date is not a Monday")
 else:
     day = selected_date.day
     month = selected_date.month
     year = selected_date.year
 
-    st.success(f"You chose : {selected_date.strftime('%A %d %B %Y')}.")
+    #st.success(f"Selected date: {selected_date.strftime('%A %d %B %Y')}.")
 
 tot_shift = 21
 
 def generate_data():
-    with st.spinner("Model is loading, please wait..."):
-                
+    with st.spinner("Schedule is loading, please wait..."):
                 
                 shift = 0
                 progress_text = f"Processing shift {shift}/{tot_shift}"
@@ -84,9 +85,9 @@ def generate_data():
                 progress_bar.empty()
 
 
-if st.button("Click here to run the model",use_container_width=True):
+if st.button("PREPARE THE SCHEDULE",use_container_width=True):
     if selected_date.weekday() != 0:
-        st.error("Please... monday..")
+        st.error("Select a Monday to prepare the schedule")
     else: 
         if os.path.exists(csv_file_name):
                 df = pd.read_csv(csv_file_name, sep=',', header=0)
@@ -95,11 +96,11 @@ if st.button("Click here to run the model",use_container_width=True):
                 if not df.empty:
                     expected_rows = num_officers * tot_shift
                     if len(df) == expected_rows:
-                        st.success("Data already exists for the selected date and is complete. Skipping generation.")
+                        st.success("Data already exists for the selected date and is complete. Skipping generation...")
                     else:
                         df = df[(df['day'] != day) | (df['month'] != month) | (df['year'] != year)]
                         df.to_csv(csv_file_name, index=False)
-                        st.warning("Data already exists for another amount of officemen. Re-generation.")
+                        st.warning("Data already exists for a different amount of officemen. Regenerating...")
                         generate_data()
                     
                 else:
@@ -108,7 +109,7 @@ if st.button("Click here to run the model",use_container_width=True):
              generate_data()
             
 try:
-    with st.spinner("Data are generating..."):    
+    with st.spinner("Generating data..."):    
         for floatVal in ["lat","lon","time_to_travel","distance"]:
             df[floatVal] = df[floatVal].astype(float)
         for intVal in ["badge","shift","day","month","year","area"]:
@@ -125,7 +126,8 @@ except:
     pass
 
 if 'big_table' not in st.session_state:
-    st.subheader("Please load the prediction by clicking on the button")
+    #st.text("Load the schedule by clicking the button")
+    st.text("")
 else:
     ###########################################################
 
@@ -142,6 +144,11 @@ else:
         "0-8": 1,
         "8-16": 2,
         "16-24": 3
+    }
+    shift_mapping_label = {
+        "0-8": "Night",
+        "8-16": "Morning",
+        "16-24": "Evening"
     }
     ###########################################################
 
@@ -173,7 +180,9 @@ else:
     st.subheader(f"Resource Allocation Map from : {selected_date.strftime('%d %B %Y')}.")
     day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
 
-    shift = st.selectbox("Select shift", list(shift_mapping.keys()))
+    # shift = st.selectbox("Select shift", list(shift_mapping.keys()))
+    shift = st.selectbox("Select shift", [k + ": " + shift_mapping_label.get(k) for k in list(shift_mapping.keys())])
+    shift = shift.split(":")[0]
     st.session_state.officier_data = count_policemen_by_area_day_shift(day_mapping[day_of_week],shift_mapping[shift])
 
     ### Set of the MAP

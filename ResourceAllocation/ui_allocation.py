@@ -61,6 +61,7 @@ class UIAllocation:
             for row in reader:
                 if float(row[3]) == self.__turn % Turn.NUM_DAILY_TURNS.value:
                     pol_data.append((str(row[0]), float(row[1]), float(row[2]), int(row[3]), int(row[4])))
+        np.random.shuffle(pol_data)
         self.__policeman_data = pol_data
         self.__num_policemen = len(pol_data)
 
