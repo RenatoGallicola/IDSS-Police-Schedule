@@ -45,7 +45,7 @@ if 'num_officers' not in st.session_state:
 
 st.session_state.num_officers = num_officers
 
-csv_file_name = "ResourceAllocation/ui_allocation.csv"
+csv_file_name = "Source/ResourceAllocation/ui_allocation.csv"
 
 today = datetime.today().strftime('%d/%m/%Y')
 default_date = get_next_monday(today)

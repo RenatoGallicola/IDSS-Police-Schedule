@@ -1,15 +1,16 @@
 import csv
 import random
-from faker import Faker
-from location_generator import Location
-from policeman_turn import Turn
-from location_generator import get_map
+
 import matplotlib.pyplot as plt
+from faker import Faker
+from location_generator import Location, get_map
+from policeman_turn import Turn
+
 
 class PolicemanGenerator:
     def __init__(
             self,
-            file_name='ResourceAllocation/policeman_data.csv',
+            file_name='Source/ResourceAllocation/policeman_data.csv',
             tot_pol=4000):
         self.__file_name = file_name
         self.__tot_pol = tot_pol

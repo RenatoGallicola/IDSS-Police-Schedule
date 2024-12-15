@@ -41,7 +41,7 @@ class UIAllocation:
         self.__year = year
         self.__turn = 1
         self.__p_class = PredictionClass()
-        self.__csv_name = 'ResourceAllocation/ui_allocation.csv'
+        self.__csv_name = 'Source/ResourceAllocation/ui_allocation.csv'
         self.__avg_vel = avg_vel
         self.__schedule_completed = False
     
@@ -50,7 +50,7 @@ class UIAllocation:
 
     def __get_location_data(self):
         loc_data = []
-        with open('ResourceAllocation/location_data.csv', newline='') as csvfile:
+        with open('Source/ResourceAllocation/location_data.csv', newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 loc_data.append((float(row[0]), float(row[1])))
@@ -58,7 +58,7 @@ class UIAllocation:
 
     def __set_policeman_data(self):
         pol_data = []
-        with open('ResourceAllocation/policeman_data.csv', newline='') as csvfile:
+        with open('Source/ResourceAllocation/policeman_data.csv', newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 if float(row[3]) == self.__turn % Turn.NUM_DAILY_TURNS.value:
@@ -210,10 +210,11 @@ class UIAllocation:
         allocation_thread.start()
 
     def week_allocation(self, threaded = True):
+        
+        self.__empty_csv()
         if threaded:
             self.__threaded_allocation()
         else:
-            #self.__empty_csv()
             # for i in range(Turn.NUM_WEEKLY_TURNS.value):
             for i in range(4):
                 self.__turn = i + 1

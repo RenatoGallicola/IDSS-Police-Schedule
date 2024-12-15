@@ -25,7 +25,7 @@ def get_map():
 
 if __name__ == "__main__":
     # filename = 'location_data.csv'
-    filename = 'ResourceAllocation/location_data.csv'
+    filename = 'Source/ResourceAllocation/location_data.csv'
 
     mult = 10 ** Location.PRECISION.value
 
