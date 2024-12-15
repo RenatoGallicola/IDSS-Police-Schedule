@@ -129,6 +129,7 @@ if 'big_table' not in st.session_state:
     #st.text("Load the schedule by clicking the button")
     st.text("")
 else:
+    ###########################################################
 
     day_mapping = {
         "Monday": 1,
@@ -175,91 +176,6 @@ else:
         area_counts = filtered_df['area'].value_counts().reindex(range(1,number_of_location+1), fill_value=0)
         return area_counts.tolist()
     ##########################  MAP  ##########################
-
-    df = st.session_state.big_table
-
-    st.title("Police Schedule Lookup")
-
-    # Define colors for groups
-    group_colors = [
-        "#FF6347", "#32CD32", "#4682B4", "#FFD700"
-    ]
-
-    # Define shift details
-    shift_details = {
-        1: "Night Shift",
-        2: "Morning Shift", 
-        3: "Evening Shift"
-    }
-
-    # Define days of week
-    days_of_week = {
-        1: "Mo", 
-        2: "Tu", 
-        3: "We", 
-        4: "Th", 
-        5: "Fr", 
-        6: "Sa", 
-        7: "Su"
-    }
-
-    # Create schedule DataFrame
-    schedule_data = []
-    for shift_num, shift_name in shift_details.items():
-        shift_row = {"Shift": shift_name}
-        
-        for day_num, day_name in days_of_week.items():
-            # Check if this shift exists for this day
-            day_shift = df[
-                (df['day'] == day_num) & 
-                (df['shift'] == shift_num)
-            ]
-            
-            # If shift exists, mark with group, otherwise mark as empty
-            if day_shift.empty:
-                shift_row[day_name] = ""
-            else:  
-                group_num = day_shift["group"].iloc[0]
-                shift_row[day_name] = f"G {group_num + 1}"
-                #shift_row[day_name] = day_shift["group"].iloc[0]
-        
-        schedule_data.append(shift_row)
-
-    # Create DataFrame
-    schedule_df = pd.DataFrame(schedule_data)
-
-    # Set index to Shift column
-    schedule_df.set_index('Shift', inplace=True)
-
-    # # Display title
-    # st.subheader("Weekly Schedule")
-
-    # Custom CSS to make cells larger
-    st.markdown("""
-    <style>
-    .dataframe {
-        font-size: 16px;
-        text-align: center;
-    }
-    .dataframe th, .dataframe td {
-        min-width: 100px;
-        height: 60px;
-        vertical-align: middle !important;
-        text-align: center !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-        # Apply colors to groups
-    def color_groups(val):
-        if isinstance(val, str) and val.startswith("G "):
-            group_num = int(val.split(" ")[1].strip()) - 1
-            color = group_colors[group_num]
-            return f'background-color: {color}99; color: white;'  # Adding '99' for more opacity
-        return ''
-
-    # Display styled schedule table
-    st.dataframe(schedule_df.style.map(color_groups), use_container_width=True)
 
     st.subheader(f"Resource Allocation Map from : {selected_date.strftime('%d %B %Y')}.")
     day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
@@ -320,9 +236,6 @@ else:
             ).add_to(m)
 
         st_folium(m, width=700, height=500)
-
-        
-
     else:
         # This part is only for avoid strange resizing behaviour
         m = folium.Map(location=[34.0522, -118.2437], zoom_start=10)
