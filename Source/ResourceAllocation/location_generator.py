@@ -1,12 +1,15 @@
-from enum import Enum
 import csv
-import numpy as np
 import os
 import sys
+from enum import Enum
+
+import numpy as np
+
 module_dir = os.path.dirname(__file__)
-module_path = os.path.join(module_dir, '../Models/scripts')
+module_path = os.path.join(module_dir, '../../Models/scripts')
 sys.path.append(module_path)
 from utils import mapLosAngeles as map
+
 
 class Location(Enum):
     MINLAT = 0.0

@@ -18,7 +18,7 @@ sys.path.append(module_path)
 from ui_allocation import UIAllocation
 
 module_dir = os.path.dirname(__file__)
-module_path = os.path.join(module_dir, '../Models/scripts')
+module_path = os.path.join(module_dir, '../../Models/scripts')
 sys.path.append(module_path)
 
 # Import the UIAllocation class

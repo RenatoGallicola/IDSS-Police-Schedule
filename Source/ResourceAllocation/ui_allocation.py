@@ -7,8 +7,11 @@ from location_generator import Location, get_map
 from resource_allocation import allocate_policemen as ap
 
 module_dir = os.path.dirname(__file__)
-module_path = os.path.join(module_dir, '../Models/scripts')
+module_path = os.path.join(module_dir, '../../Models/scripts')
 sys.path.append(module_path)
+
+import threading
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from policeman_generator import PolicemanGenerator
@@ -17,7 +20,6 @@ from PredictionClass import PredictionClass
 from utils import get_area_number
 from utils import lat as lat_array
 from utils import lon as lon_array
-import threading
 
 
 class UIAllocation:

@@ -5,7 +5,7 @@ import streamlit as st
 number_of_location = 11
 area_names = [f'Area {i+1}' for i in range(number_of_location)]
 
-policeman_csv = "ResourceAllocation/policeman_data.csv"
+policeman_csv = "Source/ResourceAllocation/policeman_data.csv"
 df_police = pd.read_csv(policeman_csv, header=None)
 csv_badge_column_idx = 4
 badge_list = df_police.iloc[:, csv_badge_column_idx]
