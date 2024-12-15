@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 
 import branca.colormap as cm
@@ -9,7 +10,6 @@ import pandas as pd
 import streamlit as st
 import tensorflow as tf
 from streamlit_folium import st_folium
-import time
 
 module_dir = os.path.dirname(__file__)
 module_path = os.path.join(module_dir, '../ResourceAllocation')
@@ -23,8 +23,9 @@ sys.path.append(module_path)
 
 # Import the UIAllocation class
 
-from utils import get_area_center
 import threading
+
+from utils import get_area_center
 
 ###########################################################
 
@@ -123,7 +124,7 @@ try:
 
         st.session_state.big_table = df
 except:
-    pass
+     pass
 
 if 'big_table' not in st.session_state:
     #st.text("Load the schedule by clicking the button")
