@@ -110,21 +110,25 @@ if st.button("PREPARE THE SCHEDULE",use_container_width=True):
              generate_data()
             
 try:
-    with st.spinner("Generating data..."):    
-        for floatVal in ["lat","lon","time_to_travel","distance"]:
-            df[floatVal] = df[floatVal].astype(float)
-        for intVal in ["badge","shift","day","month","year","area"]:
-            df[intVal] = df[intVal].astype(int)
+    with st.spinner("Data are generating..."):   
+        if os.path.exists(csv_file_name):
+            df = pd.read_csv(csv_file_name, sep=',', header=0)
+            df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
+                
+            for floatVal in ["lat","lon","time_to_travel","distance"]:
+                df[floatVal] = df[floatVal].astype(float)
+            for intVal in ["badge","shift","day","month","year","area"]:
+                df[intVal] = df[intVal].astype(int)
 
-        # shift code from 1 to 21 before
-        # shift code from 1 to 3 after, and day from 1 to 7
-        df['day'] = (df['shift']-1) // 3 + 1
-        df['shift'] = df['shift'] % 3
-        df['shift'] = df['shift'].replace(0,3)
+            # shift code from 1 to 21 before
+            # shift code from 1 to 3 after, and day from 1 to 7
+            df['day'] = (df['shift']-1) // 3 + 1
+            df['shift'] = df['shift'] % 3
+            df['shift'] = df['shift'].replace(0,3)
 
-        st.session_state.big_table = df
+            st.session_state.big_table = df
 except:
-     pass
+     pass   
 
 if 'big_table' not in st.session_state:
     #st.text("Load the schedule by clicking the button")
