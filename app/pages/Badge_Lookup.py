@@ -85,11 +85,17 @@ else:
 
     with col2:
         if st.button("Previous"):
-            st.session_state.index = max(0, st.session_state.index - 1)
+            idx = st.session_state.index -1 
+            if idx == -1:
+                idx = len(badge_list) - 1
+            st.session_state.index = idx
         
     with col3:
         if st.button("Next"):
-            st.session_state.index = min(len(badge_list) - 1, st.session_state.index + 1)
+            idx = st.session_state.index + 1
+            if idx == len(badge_list):
+                idx = 0
+            st.session_state.index = idx
 
     with col1:
         badge = badge_list[st.session_state.index]
@@ -147,7 +153,11 @@ else:
         schedule_df.set_index('Shift', inplace=True)
 
         # Display title
-        st.subheader(f"Schedule for Badge Number {badge_number}: {df_police.iloc[st.session_state.index, 0]}")
+        group = (df_police.iloc[st.session_state.index, 3]+2)%4
+        if group == 0:
+            group = 4
+        st.subheader(f"Schedule for Badge Number {badge_number}:")
+        st.subheader(f"{df_police.iloc[st.session_state.index, 0]} - Group {group}")
         
         # Custom CSS to make cells larger
         st.markdown("""

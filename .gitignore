@@ -25,3 +25,4 @@ ResourceAllocation/__pycache__/policeman_generator.cpython-312.pyc
 ResourceAllocation/__pycache__/location_generator.cpython-312.pyc
 Models/scripts/__pycache__/utils.cpython-312.pyc
 Models/scripts/__pycache__/PredictionClass.cpython-312.pyc
+*.pyc
