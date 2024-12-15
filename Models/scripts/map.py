@@ -1,5 +1,5 @@
-import pandas as pd
 import folium
+import pandas as pd
 from folium.plugins import MarkerCluster
 
 # Load the dataset
@@ -31,7 +31,7 @@ for _, row in unique_areas.iterrows():
     ).add_to(marker_cluster)
 
 # Save the map as an HTML file
-map_path = '../../crime_areas_map.html'
+map_path = 'crime_areas_map.html'
 crime_map.save(map_path)
 
 print(f'Map saved as {map_path}')

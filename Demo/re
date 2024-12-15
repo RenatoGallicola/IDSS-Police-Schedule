@@ -1,0 +1,103 @@
+absl-py @ file:///croot/absl-py_1714140470852/work
+altair==5.5.0
+aniso8601==9.0.1
+astor==0.8.1
+astunparse==1.6.3
+attrs==24.2.0
+blinker==1.9.0
+branca==0.8.0
+cachetools==5.5.0
+certifi==2024.8.30
+charset-normalizer==3.4.0
+click==8.1.7
+contourpy==1.3.0
+cycler==0.12.1
+exceptiongroup==1.2.2
+Faker==33.1.0
+Flask==3.1.0
+Flask-RESTful==0.3.10
+flatbuffers @ file:///croot/python-flatbuffers_1722369094438/work
+folium==0.19.1
+fonttools==4.55.3
+gast @ file:///Users/ktietz/demo/mc3/conda-bld/gast_1628588903283/work
+gitdb==4.0.11
+GitPython==3.1.43
+google-pasta @ file:///Users/ktietz/demo/mc3/conda-bld/google-pasta_1630577991354/work
+greenlet==3.1.1
+grpcio @ file:///croot/grpc-split_1716834572340/work
+gunicorn==23.0.0
+h5py==3.12.1
+idna==3.10
+immutabledict==4.2.1
+importlib_metadata @ file:///croot/importlib_metadata-suite_1732633488278/work
+importlib_resources==6.4.5
+iniconfig==2.0.0
+itsdangerous==2.2.0
+Jinja2==3.1.4
+joblib==1.4.2
+jsonschema==4.23.0
+jsonschema-specifications==2024.10.1
+keras==3.7.0
+Keras-Preprocessing @ file:///tmp/build/80754af9/keras-preprocessing_1612283640596/work
+kiwisolver==1.4.7
+libclang==18.1.1
+Markdown @ file:///croot/markdown_1671541909495/work
+markdown-it-py==3.0.0
+MarkupSafe @ file:///croot/markupsafe_1704205993651/work
+matplotlib==3.9.4
+mdurl==0.1.2
+mkl-service==2.4.0
+mkl_fft @ file:///io/mkl313/mkl_fft_1730824109137/work
+mkl_random @ file:///io/mkl313/mkl_random_1730823916628/work
+ml-dtypes==0.4.1
+namex==0.0.8
+narwhals==1.18.2
+numpy==2.0.2
+opt-einsum @ file:///tmp/build/80754af9/opt_einsum_1621500238896/work
+optree==0.13.1
+ortools==9.11.4210
+packaging==24.2
+pandas==2.2.3
+pillow==11.0.0
+plotly==5.24.1
+pluggy==1.5.0
+protobuf==5.26.1
+psycopg2-binary==2.9.10
+pyarrow==18.1.0
+pydeck==0.9.1
+Pygments==2.18.0
+pyparsing==3.2.0
+pytest==8.3.4
+python-dateutil==2.9.0.post0
+pytz==2024.2
+referencing==0.35.1
+requests==2.32.3
+rich==13.9.4
+rpds-py==0.22.3
+scikit-learn==1.6.0
+scipy @ file:///croot/scipy_1733756309941/work/dist/scipy-1.13.1-cp39-cp39-linux_x86_64.whl#sha256=a4372e07d982a377bda57ec71fd74ac403442571e1d717de47325a14dea5c278
+seaborn==0.13.2
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+smmap==5.0.1
+SQLAlchemy==2.0.36
+streamlit==1.41.0
+streamlit_folium==0.23.2
+tenacity==9.0.0
+tensorboard==2.18.0
+tensorboard_data_server @ file:///croot/tensorboard-data-server_1724172556187/work/tensorboard_data_server-0.7.0-py3-none-manylinux2014_x86_64.whl#sha256=79c85cfe2c0cdd115b61609d332d372681e5dac49d438683075d957adc2048f1
+tensorflow==2.18.0
+tensorflow-estimator @ file:///home/builder/adipietro/tf/tensorflow-estimator_1630508970172/work/tensorflow_estimator-2.6.0-py2.py3-none-any.whl
+tensorflow-io-gcs-filesystem==0.37.1
+termcolor @ file:///croot/termcolor_1668084651543/work
+threadpoolctl==3.5.0
+toml==0.10.2
+tomli==2.2.1
+tornado==6.4.2
+typing_extensions==4.12.2
+tzdata==2024.2
+urllib3==2.2.3
+watchdog==6.0.0
+Werkzeug==3.1.3
+wrapt @ file:///tmp/abs_c335821b-6e43-4504-9816-b1a52d3d3e1eel6uae8l/croots/recipe/wrapt_1657814400492/work
+xyzservices==2024.9.0
+zipp @ file:///croot/zipp_1732630741423/work
