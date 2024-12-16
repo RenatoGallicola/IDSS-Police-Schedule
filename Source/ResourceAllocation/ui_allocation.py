@@ -158,7 +158,19 @@ class UIAllocation:
     def __empty_csv(self):
         if os.path.exists(self.__csv_name):
             os.remove(self.__csv_name)
-
+    
+    def __backup_csv(self):
+        backup_path = self.__csv_name.rsplit('.csv', 1)[0] + '_bak.csv'
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        if os.path.exists(self.__csv_name):
+            with open(self.__csv_name, 'r') as original_file:
+                with open(backup_path, 'w', newline='') as backup_file:
+                    reader = csv.reader(original_file)
+                    writer = csv.writer(backup_file)
+                    for row in reader:
+                        writer.writerow(row)
+        
     def __update_ui_csv(self, dest, dist): 
         columns = ['badge', 'name', 'shift', 'day', 'month', 'year', 'group', 'lat', 'lon', 'area', 'time_to_travel', 'distance']
         data = []
@@ -203,14 +215,14 @@ class UIAllocation:
                 dest, dist = self.__allocate()
                 self.__update_ui_csv(dest, dist)
             self.__schedule_completed = True
-            pg = PolicemanGenerator()
-            pg.update_shift_numbers()
 
+        pg = PolicemanGenerator()
+        pg.update_shift_numbers()
         allocation_thread = threading.Thread(target=allocation_task)
         allocation_thread.start()
 
     def week_allocation(self, threaded = True):
-        
+        self.__backup_csv()
         self.__empty_csv()
         if threaded:
             self.__threaded_allocation()
@@ -227,5 +239,5 @@ class UIAllocation:
 
 if __name__ == "__main__":
     ui = UIAllocation()
-    dest = ui.week_allocation(threaded=False)
-    ui.show_allocation_map(dest)
+    dest = ui.week_allocation(threaded=True)
+    # ui.show_allocation_map(dest)

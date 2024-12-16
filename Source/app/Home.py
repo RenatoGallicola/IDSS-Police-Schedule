@@ -38,7 +38,18 @@ def get_next_monday(date):
 # Main page
 st.title("Police Dispatch IDSS")
 
-num_officers = st.number_input("Number of officers available for the week", min_value=10, step=1, value=1000)
+# num_officers = st.number_input("Number of officers available for the week", min_value=10, step=1, value=1000)
+
+policemen_csv = "Source/ResourceAllocation/policeman_data.csv"
+def get_num_officers_from_csv(file_path):
+    try:
+        df = pd.read_csv(file_path, header=None)
+        return len(df)
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return 0
+
+num_officers = get_num_officers_from_csv(policemen_csv)
 
 if 'num_officers' not in st.session_state:
     st.session_state.num_officers = None
@@ -69,17 +80,17 @@ tot_shift = 21
 def generate_data():
     with st.spinner("Schedule is loading, please wait..."):
                 
-                shift = 0
-                progress_text = f"Processing shift {shift}/{tot_shift}"
+                curr_shift = 0
+                progress_text = f"Processing shift {curr_shift}/{tot_shift}"
                 progress_bar = st.progress(0)
 
                 ui_allocation = UIAllocation(num_policemen=num_officers,day=day,month=month,year=year)
                 ui_allocation.week_allocation()
 
                 while ui_allocation.get_schedule_completed() == False:
-                    shift = ui_allocation.get_shift()
-                    progress_text = f"Processing shift {shift}/{tot_shift}" 
-                    perc = shift * 100/tot_shift
+                    curr_shift = ui_allocation.get_shift()
+                    progress_text = f"Processing shift {curr_shift}/{tot_shift}" 
+                    perc = curr_shift * 100/tot_shift
                     progress_bar.progress(int(perc), text=progress_text)
                     time.sleep(2)
                 
@@ -95,15 +106,15 @@ if st.button("PREPARE THE SCHEDULE",use_container_width=True):
                 df.columns = ["badge","name","shift","day","month","year","group","lat","lon","area","time_to_travel","distance"]
                 df = df[(df['day'] == day) & (df['month'] == month) & (df['year'] == year)]
                 if not df.empty:
-                    expected_rows = num_officers * tot_shift
-                    if len(df) == expected_rows:
-                        st.success("Data already exists for the selected date and is complete. Skipping generation...")
-                    else:
-                        df = df[(df['day'] != day) | (df['month'] != month) | (df['year'] != year)]
-                        df.to_csv(csv_file_name, index=False)
-                        st.warning("Data already exists for a different amount of officemen. Regenerating...")
-                        generate_data()
-                    
+                    # expected_rows = num_officers * tot_shift
+                    # if len(df) == expected_rows:
+                    #     st.success("Data already exists for the selected date and is complete. Skipping generation...")
+                    # else:
+                    #     df = df[(df['day'] != day) | (df['month'] != month) | (df['year'] != year)]
+                    #     df.to_csv(csv_file_name, index=False)
+                    #     st.warning("Data already exists for a different amount of officemen. Regenerating...")
+                    #     generate_data()                    
+                    st.success("Data already exists for the selected date and is complete. Skipping generation...")
                 else:
                      generate_data()
         else: 
@@ -183,7 +194,7 @@ else:
 
     df = st.session_state.big_table
 
-    st.title("Police Schedule Lookup")
+    st.subheader("Police Schedule Lookup")
 
     # Define colors for groups
     group_colors = [
@@ -199,13 +210,13 @@ else:
 
     # Define days of week
     days_of_week = {
-        1: "Mo", 
-        2: "Tu", 
-        3: "We", 
-        4: "Th", 
-        5: "Fr", 
-        6: "Sa", 
-        7: "Su"
+        1: "Mon", 
+        2: "Tue", 
+        3: "Wed", 
+        4: "Thu", 
+        5: "Fri", 
+        6: "Sat", 
+        7: "Sun"
     }
 
     # Create schedule DataFrame
@@ -225,7 +236,9 @@ else:
                 shift_row[day_name] = ""
             else:  
                 group_num = day_shift["group"].iloc[0]
-                shift_row[day_name] = f"G {group_num + 1}"
+                if group_num == 0:
+                    group_num = 4
+                shift_row[day_name] = f"G {group_num}"
                 #shift_row[day_name] = day_shift["group"].iloc[0]
         
         schedule_data.append(shift_row)
@@ -266,7 +279,7 @@ else:
     # Display styled schedule table
     st.dataframe(schedule_df.style.map(color_groups), use_container_width=True)
 
-    st.subheader(f"Resource Allocation Map from : {selected_date.strftime('%d %B %Y')}.")
+    st.subheader(f"Resource Allocation Map for: {selected_date.strftime('%d %B %Y')}")
     day_of_week = st.selectbox("Select day of the week", list(day_mapping.keys()))
 
     # shift = st.selectbox("Select shift", list(shift_mapping.keys()))
@@ -326,7 +339,27 @@ else:
 
         st_folium(m, width=700, height=500)
 
-        
+
+
+        areas = list(range(1, number_of_location+1))    
+        selected_area = st.selectbox("Select area", areas)
+
+        df = pd.read_csv(csv_file_name, sep=',', header=0)
+
+        curr_day = selected_date.day
+        curr_month = selected_date.month
+        curr_year = selected_date.year
+        curr_shift = shift_mapping[shift] + (day_mapping[day_of_week] - 1) * 3
+
+        #df = df[(df['area'] == selected_area) & (df['shift'] == shift_mapping[shift]) & (df['day'] == future_date.day) & (df['month'] == future_date.month) & (df['year'] == future_date.year)]
+        df = df[(df['area'] == selected_area) & (df['shift'] == curr_shift) & (df['day'] == curr_day) & (df['month'] == curr_month) & (df['year'] == curr_year)]
+        area_data = pd.DataFrame({
+            'Badge Number': df['badge'].astype(str),
+            'Name': df['name']
+        })
+
+        st.subheader("Policemen in the selected area")
+        st.dataframe(area_data, use_container_width=True, hide_index=True)
 
     else:
         # This part is only for avoid strange resizing behaviour
