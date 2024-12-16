@@ -72,7 +72,7 @@ def get_day_name(day_num):
     return days_of_week.get(day_num, "Unknown Day")
 
 if 'big_table' not in st.session_state:
-    st.title("Go home first to load data")
+    st.subheader("Prepare the schedule from the Home page first...")
 else:
     df = st.session_state.big_table
 
@@ -153,7 +153,7 @@ else:
         schedule_df.set_index('Shift', inplace=True)
 
         # Display title
-        group = (df_police.iloc[st.session_state.index, 3]+2)%4
+        group = df_police.iloc[st.session_state.index, 3]
         if group == 0:
             group = 4
         st.subheader(f"Schedule for Badge Number {badge_number}:")
@@ -200,6 +200,8 @@ else:
                     "Shift": shift_name,
                     "Time to Travel (minutes)": row.get('time_to_travel', 'N/A'),
                     "Distance (km)": row.get('distance', 'N/A'),
+                    "Latitude": str(round(float(row.get("lat")), 3)),
+                    "Longitude": str(round(float(row.get("lon")), 3)),
                     "Area": area_names[row.get('area', 'N/A') - 1]
                 }
                 shift_details_data.append(shift_detail)
