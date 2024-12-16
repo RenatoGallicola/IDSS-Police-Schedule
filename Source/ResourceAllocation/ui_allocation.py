@@ -223,7 +223,7 @@ class UIAllocation:
 
     def week_allocation(self, threaded = True):
         self.__backup_csv()
-        self.__empty_csv()
+        # self.__empty_csv()
         if threaded:
             self.__threaded_allocation()
         else:

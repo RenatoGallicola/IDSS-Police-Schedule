@@ -200,6 +200,8 @@ else:
                     "Shift": shift_name,
                     "Time to Travel (minutes)": row.get('time_to_travel', 'N/A'),
                     "Distance (km)": row.get('distance', 'N/A'),
+                    "Latitude": str(round(float(row.get("lat")), 3)),
+                    "Longitude": str(round(float(row.get("lon")), 3)),
                     "Area": area_names[row.get('area', 'N/A') - 1]
                 }
                 shift_details_data.append(shift_detail)

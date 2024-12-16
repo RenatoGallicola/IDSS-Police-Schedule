@@ -67,8 +67,10 @@ selected_date = st.date_input(
 )
 
 if selected_date.weekday() != 0:
-        st.error("Selected date is not a Monday")
-else:
+    st.error("Selected date is not a Monday")
+elif selected_date < datetime.today().date():
+    st.error("Selected date is in the past")
+else:    
     day = selected_date.day
     month = selected_date.month
     year = selected_date.year
@@ -100,6 +102,8 @@ def generate_data():
 if st.button("PREPARE THE SCHEDULE",use_container_width=True):
     if selected_date.weekday() != 0:
         st.error("Select a Monday to prepare the schedule")
+    elif selected_date < datetime.today().date():
+        st.error("Selected date is in the past")
     else: 
         if os.path.exists(csv_file_name):
                 df = pd.read_csv(csv_file_name, sep=',', header=0)
